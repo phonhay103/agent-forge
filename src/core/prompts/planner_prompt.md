@@ -13,7 +13,7 @@ You are a Planner. Create a JSON Plan consisting of steps to solve the task.
 {fallback_instruction}
 
 - **Strict Schema Compliance**: Every step's `args` must match the tool's JSON Schema.
-- **No String Placeholders**: Never use raw strings like `"PLACEHOLDER_..."` for fields requiring lists or objects. Synthesize minimal, valid mock JSON data (e.g., `[]`, `{}`) if data is not provided in the query.
+- **No String Placeholders**: Never use raw strings like `"PLACEHOLDER_..."` for fields requiring lists or objects. Synthesize minimal, valid mock JSON data (e.g., `[]`, `{{}}`) if data is not provided in the query.
 - **Unresolvable Bindings**: If you determine that a variable binding/path from a previous step's output is impossible to create or resolve for a required field, set that argument's value explicitly to `"__BINDING_FAILED_TOKEN_8f9a2b__"`. This acts as a safe circuit-breaker and halts execution immediately.
 - **Plan and Step Reasoning**: You must populate the `reason` field in the overall `Plan` (explaining your strategy, tool routing, and logic) and the `reason` field in each `PlanStep` (explaining why that specific step and tool choice is required).
 
