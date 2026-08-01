@@ -5,7 +5,7 @@ class PlanStep(BaseModel):
     id: str = Field(description="Unique identifier for the step, e.g., step_1")
     tool_name: str = Field(description="Name of the MCP tool to execute")
     args: Dict[str, Union[str, int, float, bool, List[Any], Dict[str, Any]]] = Field(
-        description="Direct tool arguments matching the expected parameters, where each value is either a literal primitive (string/number/bool), a nested object/array, or a variable binding string starting with '$' (e.g., '$step_1.results...')"
+        description="Direct tool arguments matching the expected parameters, where each value is either a literal primitive (string/number/bool), a nested object/array, or a variable binding string starting with '$' (e.g., '$step_1.items')"
     )
     directive: Optional[str] = Field(
         default=None,
