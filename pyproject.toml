@@ -1,0 +1,20 @@
+[project]
+name = "json-schema-transformer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastmcp>=3.4.5",
+    "mcp>=1.29.0",
+    "pydantic>=2.13.4",
+    "jmespath>=1.1.0",
+    "python-dotenv>=1.0.0",
+    "langchain-google-genai>=2.0.0",
+    "jsonpath-ng>=1.8.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]

@@ -1,0 +1,107 @@
+import asyncio
+import os
+from dotenv import load_dotenv
+from mcp import ClientSession
+import sys
+import subprocess
+from mcp.client.streamable_http import streamablehttp_client
+
+from src.core.planner.planner import Planner, Plan
+from src.core.engine.engine import HeadlessExecutor, ExecutionContext
+from src.core.engine.protocols import MCPClient
+from src.core.test_inputs import TEST_SUITE
+
+MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://127.0.0.1:8000/mcp")
+
+
+async def ensure_server_running(url: str):
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=1.0) as client:
+            await client.get(url)
+            return None
+    except Exception:
+        print("MCP Server not detected on host. Starting server process automatically...")
+        env = dict(os.environ, PYTHONPATH=".")
+        proc = subprocess.Popen([sys.executable, "src/mcp/server.py"], env=env)
+        await asyncio.sleep(2)
+        return proc
+
+async def main():
+    load_dotenv()
+
+    print("==================================================")
+    print("      MCP Headless Core (Planner & Engine)       ")
+    print("==================================================")
+    print(f"Server URL: {MCP_SERVER_URL}\n")
+
+    print("--- Available Test Cases ---")
+    for idx, tc in enumerate(TEST_SUITE.test_cases, 1):
+        print(f"[{idx}] {tc.id} ({tc.category.upper()}): {tc.name}")
+        print(f"    Prompt: {tc.query}")
+    print("[0] Custom Input\n")
+
+    choice = input("Select a test case number (0 to enter custom input): ").strip()
+    if choice.isdigit() and 1 <= int(choice) <= len(TEST_SUITE.test_cases):
+        selected_tc = TEST_SUITE.test_cases[int(choice) - 1]
+        task = selected_tc.query
+        print(f"\nRunning Test Case: {selected_tc.id} - {selected_tc.name}")
+        print(f"Query: {task}\n")
+    else:
+        task = input("Enter your custom task: ").strip()
+    print("\n--- Select Variable Binding Engine ---")
+    print("[1] JMESPath (with Automatic LLM Direct Mapping Fallback)")
+    print("[2] JSONPath (with Automatic LLM Direct Mapping Fallback)")
+    print("[3] Dot Notation (with Automatic LLM Direct Mapping Fallback)")
+    engine_choice = input("Select binding engine [1-3] (default 1): ").strip()
+    binding_type = "jmespath"
+    if engine_choice == "2":
+        binding_type = "jsonpath"
+    elif engine_choice == "3":
+        binding_type = "dot_notation"
+    fallback_choice = input("Enable Automatic LLM Direct Mapping Fallback? [y/N] (default No): ").strip().lower()
+    enable_llm_fallback = fallback_choice in ("y", "yes", "true", "1")
+    print(f"Selected Binding Engine: {binding_type.upper()} (LLM Fallback Enabled: {enable_llm_fallback})\n")
+    print(f"\n--- Connecting to MCP Server at {MCP_SERVER_URL} ---")
+    server_proc = await ensure_server_running(MCP_SERVER_URL)
+    try:
+        async with streamablehttp_client(MCP_SERVER_URL) as (read, write, _):
+            async with ClientSession(read, write) as session:
+                print("--- Discovering Tools via MCP Server ---")
+                await session.initialize()
+                tools_list = await session.list_tools()
+                tools_metadata = [t.model_dump() for t in tools_list.tools]
+                print(f"Discovered {len(tools_metadata)} tools from MCP server.\n")
+
+                planner = Planner()
+                plan: Plan = planner.create_plan(
+                    task,
+                    tools_metadata,
+                    binding_type=binding_type,
+                    enable_llm_fallback=enable_llm_fallback
+                )
+
+                print("--- Generated Plan (Pydantic Model) ---")
+                print(plan.model_dump_json(indent=2))
+                print("----------------------------------------\n")
+
+                mcp_client = MCPClient(session)
+                executor = HeadlessExecutor(
+                    mcp_client,
+                    binding_engine=binding_type,
+                    enable_llm_fallback=enable_llm_fallback
+                )
+                results: ExecutionContext = await executor.run_plan(plan)
+
+                print("\n--- Final Execution Results (Pydantic ExecutionContext) ---")
+                print(results.model_dump_json(indent=2))
+    finally:
+        if server_proc:
+            try:
+                server_proc.terminate()
+                server_proc.wait(timeout=2)
+            except Exception:
+                pass
+
+if __name__ == "__main__":
+    asyncio.run(main())
