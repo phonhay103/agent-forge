@@ -17,42 +17,53 @@ def load_prompt_template(name: str) -> str:
 @functools.lru_cache(maxsize=16)
 def get_llm_client(model_name: str = "gemini-2.5-flash", temperature: float = 0.0) -> Any:
     """
-    Centralized, provider-agnostic LLM client factory.
-    Supports parsing models with a provider prefix:
-    - "gemini/gemini-2.5-flash" or just "gemini-2.5-flash" (defaults to Gemini)
+    Centralized, provider-agnostic LLM client factory using native LangChain SDK.
+    Supports parsing models with a provider prefix (using '/' or ':'):
+    - "gemini/gemini-2.5-flash" or just "gemini-2.5-flash" (defaults to google_genai)
     - "openai/gpt-4o"
     - "anthropic/claude-3-5-sonnet"
+    - "cohere/command-r"
     """
+    from langchain.chat_models import init_chat_model
+
     provider = "gemini"
     name = model_name
 
     if "/" in model_name:
         provider, name = model_name.split("/", 1)
+    elif ":" in model_name:
+        provider, name = model_name.split(":", 1)
 
-    if provider == "gemini":
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            raise ValueError("GOOGLE_API_KEY environment variable is required to instantiate the Gemini LLM client.")
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        return ChatGoogleGenerativeAI(
-            model=name,
-            google_api_key=api_key,
-            temperature=temperature
-        )
-    elif provider == "openai":
-        openai_key = os.getenv("OPENAI_API_KEY")
-        if not openai_key:
-            raise ValueError("OPENAI_API_KEY environment variable is required to instantiate OpenAI client.")
-        from langchain_openai import ChatOpenAI
-        return ChatOpenAI(model=name, api_key=openai_key, temperature=temperature)
-    elif provider == "anthropic":
-        anthropic_key = os.getenv("ANTHROPIC_API_KEY")
-        if not anthropic_key:
-            raise ValueError("ANTHROPIC_API_KEY environment variable is required to instantiate Anthropic client.")
-        from langchain_anthropic import ChatAnthropic
-        return ChatAnthropic(model=name, api_key=anthropic_key, temperature=temperature)
-    else:
-        raise ValueError(f"Unsupported LLM provider: {provider}")
+    # Normalize/Map provider alias to standard LangChain provider names
+    provider_mapping = {
+        "gemini": "google_genai",
+        "google": "google_genai",
+        "google_genai": "google_genai",
+        "openai": "openai",
+        "anthropic": "anthropic",
+        "cohere": "cohere",
+        "mistral": "mistralai",
+        "mistralai": "mistralai",
+        "groq": "groq",
+        "ollama": "ollama",
+    }
+    
+    mapped_provider = provider_mapping.get(provider.lower(), provider.lower())
+
+    # Pre-flight credential checks for major providers to assist developer onboarding
+    if mapped_provider == "google_genai" and not os.getenv("GOOGLE_API_KEY"):
+        raise ValueError("GOOGLE_API_KEY environment variable is required to instantiate the Gemini LLM client.")
+    elif mapped_provider == "openai" and not os.getenv("OPENAI_API_KEY"):
+        raise ValueError("OPENAI_API_KEY environment variable is required to instantiate the OpenAI LLM client.")
+    elif mapped_provider == "anthropic" and not os.getenv("ANTHROPIC_API_KEY"):
+        raise ValueError("ANTHROPIC_API_KEY environment variable is required to instantiate the Anthropic LLM client.")
+
+    # Initialize the chat model natively and agnostically
+    return init_chat_model(
+        model=name,
+        model_provider=mapped_provider,
+        temperature=temperature
+    )
 
 
 def get_structured_llm_client(
