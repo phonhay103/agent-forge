@@ -105,14 +105,12 @@ def run_structured_llm(
     """
     from langchain_core.prompts import ChatPromptTemplate
 
-    # Load prompt text and create prompt template
+    # Load prompt text and create native ChatPromptTemplate with System & Human message roles
     prompt_text = load_prompt_template(prompt_name)
-    if "<system_instructions>" in prompt_text and "</system_instructions>" in prompt_text:
-        system_part = prompt_text.split("<system_instructions>")[1].split("</system_instructions>")[0].strip()
-        human_part = prompt_text.split("</system_instructions>")[1].strip()
+    if "user_query" in prompt_variables:
         prompt_template = ChatPromptTemplate.from_messages([
-            ("system", system_part),
-            ("human", human_part)
+            ("system", prompt_text),
+            ("human", "{user_query}")
         ])
     else:
         prompt_template = ChatPromptTemplate.from_template(prompt_text)
