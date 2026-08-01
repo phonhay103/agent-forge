@@ -23,7 +23,7 @@ async def test_binding_failure_stops_execution():
             PlanStep(
                 id="step_1",
                 tool_name="some_tool",
-                args={"input": {"param": "$step_non_existent.results"}}
+                args={"param": "$step_non_existent.results"}
             )
         ]
     )

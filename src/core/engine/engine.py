@@ -139,9 +139,14 @@ class HeadlessExecutor:
             if isinstance(resolved_args, BaseModel):
                 call_args = resolved_args.model_dump()
             elif isinstance(resolved_args, dict):
-                call_args = resolved_args
+                call_args = resolved_args.copy()
             else:
-                call_args = {"input": resolved_args}
+                call_args = resolved_args
+
+            # Auto-wrap in {"input": ...} if the target tool expects an "input" key and call_args doesn't have it
+            if target_tool_input_schema and "input" in target_tool_input_schema.get("properties", {}):
+                if isinstance(call_args, dict) and "input" not in call_args:
+                    call_args = {"input": call_args}
 
             logger.debug(f"Resolved call arguments for tool '{step.tool_name}': {call_args}")
 

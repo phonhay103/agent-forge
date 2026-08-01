@@ -58,12 +58,11 @@ def test_get_llm_client_missing_key():
             get_llm_client("gemini-2.5-flash")
 
 
-def test_plan_model_has_reason():
-    from src.core.planner.models import Plan, PlanStep, StepArgument
+    from src.core.planner.models import Plan, PlanStep
     step = PlanStep(
         id="step_1",
         tool_name="some_tool",
-        args=StepArgument(input={}),
+        args={},
         reason="Because we need to query search"
     )
     plan = Plan(

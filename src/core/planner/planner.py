@@ -3,7 +3,7 @@ from src.core.binding import BaseBindingEngine, get_binding_engine
 from pydantic import BaseModel, Field
 import json
 
-from src.core.planner.models import StepArgument, PlanStep, Plan
+from src.core.planner.models import PlanStep, Plan
 
 class Planner:
     def __init__(self, model: Optional[Any] = None, model_name: str = "gemini-2.5-flash"):

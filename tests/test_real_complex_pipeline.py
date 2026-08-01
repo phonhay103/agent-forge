@@ -118,17 +118,13 @@ async def run_complex_pipeline():
                             PlanStep(
                                 id="step_1",
                                 tool_name="analyze_supply_chain",
-                                args={
-                                    "input": make_complex_supply_chain_input()
-                                }
+                                args=make_complex_supply_chain_input()
                             ),
                             PlanStep(
                                 id="step_2",
                                 tool_name="calculate",
                                 args={
-                                    "input": {
-                                        "prices": expr
-                                    }
+                                    "prices": expr
                                 }
                             )
                         ]
