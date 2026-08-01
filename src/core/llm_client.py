@@ -23,13 +23,21 @@ def get_llm_client(model_name: str = "gemini-2.5-flash", temperature: float = 0.
     - "openai/gpt-4o"
     - "anthropic/claude-3-5-sonnet"
     - "cohere/command-r"
+    - "openrouter/anthropic/claude-3.5-sonnet"
     """
     from langchain.chat_models import init_chat_model
 
     provider = "gemini"
     name = model_name
 
-    if "/" in model_name:
+    # Special handling for openrouter since model names contain slashes (e.g., anthropic/claude-3.5-sonnet)
+    if model_name.lower().startswith("openrouter/"):
+        provider = "openrouter"
+        name = model_name[11:]
+    elif model_name.lower().startswith("openrouter:"):
+        provider = "openrouter"
+        name = model_name[11:]
+    elif "/" in model_name:
         provider, name = model_name.split("/", 1)
     elif ":" in model_name:
         provider, name = model_name.split(":", 1)
@@ -46,6 +54,7 @@ def get_llm_client(model_name: str = "gemini-2.5-flash", temperature: float = 0.
         "mistralai": "mistralai",
         "groq": "groq",
         "ollama": "ollama",
+        "openrouter": "openrouter",
     }
     
     mapped_provider = provider_mapping.get(provider.lower(), provider.lower())
@@ -57,6 +66,8 @@ def get_llm_client(model_name: str = "gemini-2.5-flash", temperature: float = 0.
         raise ValueError("OPENAI_API_KEY environment variable is required to instantiate the OpenAI LLM client.")
     elif mapped_provider == "anthropic" and not os.getenv("ANTHROPIC_API_KEY"):
         raise ValueError("ANTHROPIC_API_KEY environment variable is required to instantiate the Anthropic LLM client.")
+    elif mapped_provider == "openrouter" and not os.getenv("OPENROUTER_API_KEY"):
+        raise ValueError("OPENROUTER_API_KEY environment variable is required to instantiate the OpenRouter LLM client.")
 
     # Initialize the chat model natively and agnostically
     return init_chat_model(

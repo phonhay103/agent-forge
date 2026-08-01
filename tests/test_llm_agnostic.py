@@ -37,6 +37,18 @@ def test_get_llm_client_anthropic():
                 temperature=0.1
             )
 
+
+def test_get_llm_client_openrouter():
+    get_llm_client.cache_clear()
+    with patch("langchain.chat_models.init_chat_model") as mock_init:
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
+            get_llm_client("openrouter/anthropic/claude-3-5-sonnet", temperature=0.3)
+            mock_init.assert_called_once_with(
+                model="anthropic/claude-3-5-sonnet",
+                model_provider="openrouter",
+                temperature=0.3
+            )
+
 def test_get_llm_client_missing_key():
     get_llm_client.cache_clear()
     with patch.dict(os.environ, {}):
