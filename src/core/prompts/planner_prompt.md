@@ -16,12 +16,12 @@ You are an expert AI Planner. Your job is to create a structured JSON Plan consi
 
 When constructing arguments (`args`) for each `PlanStep`, every parameter MUST fall into exactly one of the following three cases:
 
-1. **Case 1: Direct Value (Giá trị trực tiếp / Literal Value)**
+1. **Case 1: Direct Value (Literal Value)**
    - **When to use**: The argument value is explicitly provided in the user's task prompt or is a fixed constant parameter.
    - **Format**: Primitive JSON values (strings, numbers, booleans) or structured objects/lists that do **NOT** start with `$`.
    - **Examples**: `"product_name": "iPhone"`, `"discount_percent": 10`, `"target_currency": "EUR"`.
 
-2. **Case 2: Path Reference (Đường dẫn tham chiếu biến / Dynamic Reference)**
+2. **Case 2: Path Reference (Dynamic Reference)**
    - **When to use**: The argument depends on data generated, searched, or processed by a previous step.
    - **Format**: Dynamic binding string starting with `$step_<N>.<field>` or engine expressions (e.g., JMESPath).
    - **Rules**:
