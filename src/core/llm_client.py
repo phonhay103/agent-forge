@@ -107,7 +107,15 @@ def run_structured_llm(
 
     # Load prompt text and create prompt template
     prompt_text = load_prompt_template(prompt_name)
-    prompt_template = ChatPromptTemplate.from_template(prompt_text)
+    if "<system_instructions>" in prompt_text and "</system_instructions>" in prompt_text:
+        system_part = prompt_text.split("<system_instructions>")[1].split("</system_instructions>")[0].strip()
+        human_part = prompt_text.split("</system_instructions>")[1].strip()
+        prompt_template = ChatPromptTemplate.from_messages([
+            ("system", system_part),
+            ("human", human_part)
+        ])
+    else:
+        prompt_template = ChatPromptTemplate.from_template(prompt_text)
 
     # Resolve structured model client
     structured_llm = get_structured_llm_client(
