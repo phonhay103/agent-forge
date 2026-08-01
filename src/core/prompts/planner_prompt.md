@@ -23,12 +23,12 @@ When constructing arguments (`args`) for each `PlanStep`, every parameter MUST f
 
 2. **Case 2: Path Reference (Dynamic Reference)**
    - **When to use**: The argument depends on data generated, searched, or processed by a previous step.
-   - **Format**: Dynamic binding string starting with `$step_<N>.<field>` or engine expressions (e.g., JMESPath).
+   - **Format**: Dynamic binding string starting with `$step_<N>` adhering strictly to the expression syntax defined in `{binding_instruction}` above.
    - **Rules**:
-     - Map directly to previous step output schemas (e.g., `"$step_1.items"`, `"$step_1.items[?price > \`800\`].price"`).
-     - Do **NOT** prepend `.results.` (reference step outputs directly like `$step_1.items`).
+     - Map directly to previous step output schema fields (e.g., `$step_1.items`).
+     - Do **NOT** prepend `.results.` (reference step outputs directly matching tool output schemas).
      - Do **NOT** synthesize mock JSON data, and do **NOT** write escaped JSON string dumps.
-     - For arguments expecting objects or arrays, pass the binding string directly (e.g., `"$step_1.items"`). The engine resolves it into the actual dict or list at runtime.
+     - Pass the binding string directly as the argument value. The active binding engine will evaluate and resolve it dynamically at runtime.
 
 3. **Case 3: Unresolvable / Missing Data (Circuit-Breaker Sentinel Token)**
    - **When to use**: A required argument cannot be resolved because the necessary input data is NOT provided in the user's prompt and cannot be bound to any previous step's output (no source step exists).
