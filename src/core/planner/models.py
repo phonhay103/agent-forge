@@ -12,6 +12,14 @@ class PlanStep(BaseModel):
         default=None,
         description="Natural Language Data Mapping Directive explaining how outputs from previous steps should be mapped if fallback is enabled"
     )
+    reason: Optional[str] = Field(
+        default=None,
+        description="The reasoning or purpose behind this execution step"
+    )
 
 class Plan(BaseModel):
     steps: List[PlanStep] = Field(description="Ordered list of steps to execute sequentially")
+    reason: Optional[str] = Field(
+        default=None,
+        description="Overall explanation of the plan strategy, routing path, and tool choices"
+    )

@@ -56,3 +56,19 @@ def test_get_llm_client_missing_key():
             del os.environ["GOOGLE_API_KEY"]
         with pytest.raises(ValueError, match="GOOGLE_API_KEY environment variable is required"):
             get_llm_client("gemini-2.5-flash")
+
+
+def test_plan_model_has_reason():
+    from src.core.planner.models import Plan, PlanStep, StepArgument
+    step = PlanStep(
+        id="step_1",
+        tool_name="some_tool",
+        args=StepArgument(input={}),
+        reason="Because we need to query search"
+    )
+    plan = Plan(
+        steps=[step],
+        reason="This plan converts searched products."
+    )
+    assert plan.reason == "This plan converts searched products."
+    assert plan.steps[0].reason == "Because we need to query search"
