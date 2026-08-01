@@ -2,8 +2,7 @@
 
 You are a Planner. Create a JSON Plan consisting of steps to solve the task.
 
-## Available Tools (JSON Schema Metadata)
-
+## Available Tools
 ```json
 {available_tools}
 ```
@@ -13,159 +12,18 @@ You are a Planner. Create a JSON Plan consisting of steps to solve the task.
 {binding_instruction}
 {fallback_instruction}
 
+- **Strict Schema Compliance**: Every step's `args` must match the tool's JSON Schema.
+- **No String Placeholders**: Never use raw strings like `"PLACEHOLDER_..."` for fields requiring lists or objects. Synthesize minimal, valid mock JSON data (e.g., `[]`, `{}`) if data is not provided in the query.
+- **Unresolvable Bindings**: If you determine that a variable binding/path from a previous step's output is impossible to create or resolve for a required field, set that argument's value explicitly to `"__BINDING_FAILED_TOKEN_8f9a2b__"`. This acts as a safe circuit-breaker and halts execution immediately.
 
-- **Strict Argument Schema Compliance**: When generating the `args` field for any tool execution step, you must strictly conform to the tool's defined input JSON Schema.
-- **Do Not Use Plain String Placeholders for Complex Types**: Never use plain string placeholders like `"PLACEHOLDER_..."` for fields that require objects, arrays, dictionaries, or lists.
-- **Generate Realistic Mock Structures**: If the user query does not provide specific data values, you must dynamically synthesize fully conforming, valid mock JSON data (nested objects, lists, numbers, booleans, etc.) that matches the exact nested schema structure of the tool so that execution succeeds without Pydantic/validation errors.
+### Compact Mock Structure Examples (For 5-Tier Nested Tools):
 
-### Reference Examples of Conforming Mock Inputs for Deeply Nested Tools
+If no nested input data is provided in the task query, use a minimal conforming structure to pass validation:
 
-If the task asks to evaluate or analyze deeply nested structures without providing explicit JSON data in the query, use the following template structures in your `args` to pass tool validation:
+- **evaluate_nested_curriculum**: `{"input": {"program_meta": {"program_code": "CS-BS", "accreditation": {"agency": "ABET", "valid_until": "2030-12-31"}}, "academic_years": [{"year_number": 1, "semester_blocks": [[{"course_code": "CS101", "course_name": "Intro to CS", "credits": 4, "instructor": {"name": "Dr. Grace", "contact": {"email": "grace@u.edu", "phone": "123"}}, "class_sections": [{"section_id": "SEC-01", "timetable_grid": [[{"room_number": "R1", "location": {"building": "S1", "floor": 1}, "enrolled_scores": [90.0]}]]}]]}]}]}}`
+- **analyze_supply_chain**: `{"input": {"network_info": {"network_name": "Logistics", "version": "1.0"}, "regions": [{"region_code": "APAC", "warehouse_matrix": [[{"block_id": "B1", "manager": {"name": "Alice", "contact": {"email": "a@l.com", "phone": "1"}}, "aisles": [{"aisle_id": "A1", "shelf_grid": [[{"sku": "SKU-1", "item_name": "RAM", "quantity": 5, "unit_price": 100.0, "specification": {"dimensions_cm": [1.0, 1.0, 1.0], "weight_kg": 0.1}}]]}]}]}]}}`
+- **process_org_structure**: `{"input": {"company_profile": {"company_name": "Acme", "founded_year": 2000}, "divisions": [{"division_id": "D1", "division_name": "HQ", "team_matrix": [[{"team_id": "T1", "team_name": "Dev", "projects": [{"project_id": "P1", "project_name": "Platform", "budget": 1000.0, "sprint_tasks": [[{"task_id": "TSK-1", "title": "DB", "estimated_hours": 10.0}]]}]}]}]}]}}`
 
-#### Example for `evaluate_nested_curriculum`:
-```json
-{
-  "input": {
-    "program_meta": {
-      "program_code": "CS-BS",
-      "accreditation": {
-        "agency": "ABET",
-        "valid_until": "2030-12-31"
-      }
-    },
-    "academic_years": [
-      {
-        "year_number": 1,
-        "semester_blocks": [
-          [
-            {
-              "course_code": "CS101",
-              "course_name": "Intro to CS",
-              "credits": 4,
-              "instructor": {
-                "name": "Dr. Grace",
-                "contact": {
-                  "email": "grace@university.edu",
-                  "phone": "+199988877"
-                }
-              },
-              "class_sections": [
-                {
-                  "section_id": "SEC-01",
-                  "timetable_grid": [
-                    [
-                      {
-                        "room_number": "R-101",
-                        "location": {
-                          "building": "Science Hall",
-                          "floor": 2
-                        },
-                        "enrolled_scores": [85.0, 92.5, 78.0, 90.0]
-                      }
-                    ]
-                  ]
-                }
-              ]
-            }
-          ]
-        ]
-      }
-    ]
-  }
-}
-```
-
-#### Example for `analyze_supply_chain`:
-```json
-{
-  "input": {
-    "network_info": {
-      "network_name": "Global Tech Logistics",
-      "version": "v1.0"
-    },
-    "regions": [
-      {
-        "region_code": "APAC",
-        "warehouse_matrix": [
-          [
-            {
-              "block_id": "BLK-A1",
-              "manager": {
-                "name": "Alice",
-                "contact": {
-                  "email": "alice@logistics.com",
-                  "phone": "+123456"
-                }
-              },
-              "aisles": [
-                {
-                  "aisle_id": "AISLE-1",
-                  "shelf_grid": [
-                    [
-                      {
-                        "sku": "SKU-100",
-                        "item_name": "DDR5 RAM",
-                        "quantity": 5,
-                        "unit_price": 120.0,
-                        "specification": {
-                          "dimensions_cm": [10.0, 3.0, 0.5],
-                          "weight_kg": 0.1
-                        }
-                      }
-                    ]
-                  ]
-                }
-              ]
-            }
-          ]
-        ]
-      }
-    ]
-  }
-}
-```
-
-#### Example for `process_org_structure`:
-```json
-{
-  "input": {
-    "company_profile": {
-      "company_name": "Acme Corp",
-      "founded_year": 1995
-    },
-    "divisions": [
-      {
-        "division_id": "DIV-HQ",
-        "division_name": "Corporate HQ",
-        "team_matrix": [
-          [
-            {
-              "team_id": "TEAM-1",
-              "team_name": "Core Dev",
-              "projects": [
-                {
-                  "project_id": "PROJ-A",
-                  "project_name": "NextGen platform",
-                  "budget": 150000.0,
-                  "sprint_tasks": [
-                    [
-                      {
-                        "task_id": "TASK-1",
-                        "title": "Database Setup",
-                        "estimated_hours": 15.5
-                      }
-                    ]
-                  ]
-                }
-              ]
-            }
-          ]
-        ]
-      }
-    ]
-  }
-}
-```
 ## Task
 
 Task: {user_query}
