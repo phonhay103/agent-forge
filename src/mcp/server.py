@@ -1,3 +1,12 @@
+"""
+MCP Streamable HTTP Server
+
+To run this server standalone:
+    make server
+    # or
+    uv run python -m src.mcp.server
+"""
+
 from fastmcp import FastMCP
 import src.mcp.tools.business_tools as tools
 from src.mcp.schema.models import *
@@ -39,38 +48,9 @@ def evaluate_nested_curriculum(input: CurriculumInput) -> CurriculumOutput:
 
 
 if __name__ == "__main__":
-    import uvicorn
-    from starlette.applications import Starlette
-    from starlette.routing import Mount
-    import anyio
-    from mcp.server.streamable_http import StreamableHTTPServerTransport
-
-    transport = StreamableHTTPServerTransport(mcp_session_id="agent-session", is_json_response_enabled=True)
-
-    app = Starlette(
-        routes=[
-            Mount("/mcp", app=transport.handle_request),
-            Mount("/", app=transport.handle_request),
-        ]
-    )
-
-    async def run_server():
-        print("==================================================", flush=True)
-        print("   Starting MCP Streamable HTTP Server...", flush=True)
-        print("   Listening at: http://127.0.0.1:8000/mcp", flush=True)
-        print("   Press Ctrl+C to stop the server.", flush=True)
-        print("==================================================", flush=True)
-        async with transport.connect() as (read_stream, write_stream):
-            async with anyio.create_task_group() as tg:
-                config = uvicorn.Config(app, host="127.0.0.1", port=8000, log_level="warning")
-                server = uvicorn.Server(config)
-                tg.start_soon(server.serve)
-                await anyio.sleep(0.1)
-
-                await mcp._mcp_server.run(
-                    read_stream,
-                    write_stream,
-                    mcp._mcp_server.create_initialization_options()
-                )
-
-    anyio.run(run_server)
+    print("==================================================", flush=True)
+    print("   Starting MCP Streamable HTTP Server...", flush=True)
+    print("   Listening at: http://127.0.0.1:8000/mcp", flush=True)
+    print("   Press Ctrl+C to stop the server.", flush=True)
+    print("==================================================", flush=True)
+    mcp.run(transport="streamable-http", host="127.0.0.1", port=8000, path="/mcp")

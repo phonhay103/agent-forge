@@ -99,36 +99,31 @@ class HeadlessExecutor:
                 directive=getattr(step, "directive", None)
             )
             
-            # Stop execution if any variable binding could not be resolved
             BINDING_FAILED_TOKEN = "__BINDING_FAILED_TOKEN_8f9a2b__"
-            
-            def replace_unresolved(v: Any) -> Any:
-                if VariableParser.is_variable_reference(v):
-                    return BINDING_FAILED_TOKEN
-                if isinstance(v, dict):
-                    return {k: replace_unresolved(val) for k, val in v.items()}
-                if isinstance(v, list):
-                    return [replace_unresolved(val) for val in v]
-                if hasattr(v, "model_dump"):
-                    return replace_unresolved(v.model_dump())
-                return v
 
-            resolved_args = replace_unresolved(resolved_args)
-
-            def has_failed_token(v: Any) -> bool:
+            def find_unresolved_issue(v: Any) -> Optional[str]:
                 if v == BINDING_FAILED_TOKEN:
-                    return True
+                    return f"Sent by Planner due to missing input data ('{BINDING_FAILED_TOKEN}')"
+                if VariableParser.is_variable_reference(v):
+                    return f"Failed to evaluate expression '{v}'"
                 if isinstance(v, dict):
-                    return any(has_failed_token(val) for val in v.values())
+                    for val in v.values():
+                        res = find_unresolved_issue(val)
+                        if res:
+                            return res
                 if isinstance(v, list):
-                    return any(has_failed_token(val) for val in v)
-                return False
+                    for val in v:
+                        res = find_unresolved_issue(val)
+                        if res:
+                            return res
+                return None
 
-            if has_failed_token(resolved_args):
+            issue = find_unresolved_issue(resolved_args)
+            if issue:
                 err_msg = (
                     f"Execution Halted: Variable binding failed for step '{step.id}' "
                     f"using engine '{self.binding_engine.binding_type.value}'. "
-                    f"Arguments contain unresolved reference token '{BINDING_FAILED_TOKEN}'."
+                    f"Reason: {issue}."
                 )
                 logger.error(err_msg)
                 raise ValueError(err_msg)

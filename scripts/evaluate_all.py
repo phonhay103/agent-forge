@@ -16,7 +16,7 @@ from src.core.planner.planner import Planner, Plan
 from src.core.engine.engine import HeadlessExecutor, ExecutionContext
 from src.core.engine.protocols import MCPClient
 from src.core.test_inputs import TEST_SUITE, TestCase
-from src.core.main import ensure_server_running, MCP_SERVER_URL
+from src.core.main import MCP_SERVER_URL
 
 load_dotenv()
 
@@ -26,7 +26,6 @@ async def run_single_test(
     binding_type: str = "jmespath",
     enable_llm_fallback: bool = False
 ) -> dict:
-    server_proc = await ensure_server_running(MCP_SERVER_URL)
     report = {
         "id": tc.id,
         "name": tc.name,
@@ -66,7 +65,7 @@ async def run_single_test(
                     report["execution"] = results.model_dump()
                     report["status"] = "PASSED"
                 except ValueError as ve:
-                    report["status"] = "HALTED_BY_DESIGN" if "__BINDING_FAILED_TOKEN" in str(ve) else "FAILED"
+                    report["status"] = "HALTED_BY_DESIGN" if ("__BINDING_FAILED_TOKEN" in str(ve) or "Execution Halted" in str(ve)) else "FAILED"
                     report["error"] = str(ve)
                 except Exception as e:
                     report["status"] = "FAILED"
@@ -74,13 +73,6 @@ async def run_single_test(
     except Exception as outer_e:
         report["status"] = "SERVER_ERROR"
         report["error"] = str(outer_e)
-    finally:
-        if server_proc:
-            try:
-                server_proc.terminate()
-                server_proc.wait(timeout=2)
-            except Exception:
-                pass
                 
     return report
 

@@ -1,9 +1,18 @@
+"""
+Interactive LLM Planner & Execution Agent
+
+To run the Agent CLI:
+    make agent
+    # or
+    uv run python -m src.core.main
+"""
+
 import asyncio
 import os
-from dotenv import load_dotenv
-from mcp import ClientSession
 import sys
 import subprocess
+from dotenv import load_dotenv
+from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
 from src.core.planner.planner import Planner, Plan
@@ -13,19 +22,6 @@ from src.core.test_inputs import TEST_SUITE
 
 MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://127.0.0.1:8000/mcp")
 
-
-async def ensure_server_running(url: str):
-    import httpx
-    try:
-        async with httpx.AsyncClient(timeout=1.0) as client:
-            await client.get(url)
-            return None
-    except Exception:
-        print("MCP Server not detected on host. Starting server process automatically...")
-        env = dict(os.environ, PYTHONPATH=".")
-        proc = subprocess.Popen([sys.executable, "src/mcp/server.py"], env=env)
-        await asyncio.sleep(2)
-        return proc
 
 async def main():
     load_dotenv()
@@ -63,7 +59,7 @@ async def main():
     enable_llm_fallback = fallback_choice in ("y", "yes", "true", "1")
     print(f"Selected Binding Engine: {binding_type.upper()} (LLM Fallback Enabled: {enable_llm_fallback})\n")
     print(f"\n--- Connecting to MCP Server at {MCP_SERVER_URL} ---")
-    server_proc = await ensure_server_running(MCP_SERVER_URL)
+    
     try:
         async with streamablehttp_client(MCP_SERVER_URL) as (read, write, _):
             async with ClientSession(read, write) as session:
@@ -91,17 +87,18 @@ async def main():
                     binding_engine=binding_type,
                     enable_llm_fallback=enable_llm_fallback
                 )
-                results: ExecutionContext = await executor.run_plan(plan)
-
-                print("\n--- Final Execution Results (Pydantic ExecutionContext) ---")
-                print(results.model_dump_json(indent=2))
-    finally:
-        if server_proc:
-            try:
-                server_proc.terminate()
-                server_proc.wait(timeout=2)
-            except Exception:
-                pass
+                try:
+                    results: ExecutionContext = await executor.run_plan(plan)
+                    print("\n--- Final Execution Results (Pydantic ExecutionContext) ---")
+                    print(results.model_dump_json(indent=2))
+                except ValueError as ve:
+                    print(f"\n[EXECUTION HALTED] {ve}")
+                except Exception as ex:
+                    print(f"\n[EXECUTION ERROR] {ex}")
+    except Exception as conn_err:
+        print(f"\nError: Could not connect to MCP Server at {MCP_SERVER_URL}: {conn_err}")
+        print("Please ensure the MCP server is running independently ('make server' or 'uv run python -m src.mcp.server').")
+        sys.exit(1)
 
 if __name__ == "__main__":
     asyncio.run(main())

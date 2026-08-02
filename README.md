@@ -86,7 +86,37 @@ GOOGLE_API_KEY=your_gemini_api_key_here
 # OPENAI_API_KEY=your_openai_key
 # ANTHROPIC_API_KEY=your_anthropic_key
 # OPENROUTER_API_KEY=your_openrouter_key
+### Commands (Makefile)
+
+Quick shortcuts via `make`:
+
+```bash
+make install        # Install dependencies via uv sync
+make server         # Run standalone MCP Streamable HTTP server (src/mcp/server.py)
+make agent          # Run interactive Planner & Execution Agent (src/core/main.py)
+make test           # Run unit tests via pytest
+make eval           # Run evaluation suite (jmespath)
+make eval-fallback  # Run evaluation suite with LLM fallback enabled
+make eval-jsonpath  # Run evaluation suite using jsonpath engine
+make eval-dot       # Run evaluation suite using dot_notation engine
+make clean          # Clean build artifacts and caches
 ```
+
+### Running MCP Server and Agent as Independent Services
+
+The MCP Server and the Agent CLI run as two completely decoupled services:
+
+1. **Start the MCP Server** (Terminal 1):
+   ```bash
+   make server
+   # or: uv run python -m src.mcp.server
+   ```
+
+2. **Run the Agent CLI or Evaluation Suite** (Terminal 2):
+   ```bash
+   make agent
+   # or: uv run python -m src.core.main
+   ```
 
 ---
 
