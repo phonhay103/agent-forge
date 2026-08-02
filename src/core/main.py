@@ -18,6 +18,7 @@ from mcp.client.streamable_http import streamablehttp_client
 from src.core.planner.planner import Planner, Plan
 from src.core.engine.engine import HeadlessExecutor, ExecutionContext
 from src.core.engine.protocols import MCPClient
+from src.core.plan_display import format_plan_display
 from src.core.test_inputs import TEST_SUITE
 
 MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://127.0.0.1:8000/mcp")
@@ -88,9 +89,13 @@ async def main():
                     print(f"\n[PLANNING ERROR] Failed to create plan: {format_exception(plan_err)}")
                     return
 
-                print("--- Generated Plan (Pydantic Model) ---")
-                print(plan.model_dump_json(indent=2))
-                print("----------------------------------------\n")
+                print(format_plan_display(
+                    plan,
+                    tools_metadata,
+                    binding_type=binding_type,
+                    enable_llm_fallback=enable_llm_fallback
+                ))
+                print()
 
                 mcp_client = MCPClient(session)
                 executor = HeadlessExecutor(
