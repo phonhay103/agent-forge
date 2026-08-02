@@ -63,6 +63,8 @@ def test_dot_notation_resolution():
     assert res == {"first_user": "Alice"}
 
 
+
+
 def test_variable_parser():
     assert VariableParser.is_variable_reference("$step_1.foo")
     assert VariableParser.is_variable_reference("$step_calc.bar")

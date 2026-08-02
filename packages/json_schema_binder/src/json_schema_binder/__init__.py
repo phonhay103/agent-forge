@@ -1,4 +1,5 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, TypeVar, Type, Mapping
+from pydantic import BaseModel
 
 from json_schema_binder.base import BaseBindingEngine, BindingType, register_binding_engine
 from json_schema_binder.engines import (
@@ -8,36 +9,71 @@ from json_schema_binder.engines import (
 )
 from json_schema_binder.factory import get_binding_engine
 from json_schema_binder.fallback import LLMFallbackMapper
+from json_schema_binder.models import (
+    BindingContext,
+    EvaluationResult,
+    MappingResult,
+    MappingSpec,
+    SupportedDataType,
+)
 from json_schema_binder.parser import VariableParser
 from json_schema_binder.protocols import FallbackResolverProtocol
+from json_schema_binder.template import TemplateResolver
+
+T = TypeVar("T")
+
+
+def evaluate_expression(
+    expression: str,
+    source_data: Any,
+    engine: Union[str, BaseBindingEngine] = "jmespath",
+) -> EvaluationResult[Any]:
+    """
+    Evaluates a single expression directly against source data.
+    """
+    binding_engine = get_binding_engine(engine) if isinstance(engine, str) else engine
+    return binding_engine.evaluate(expression, source_data)
+
+
+def transform_schema(
+    source_data: Any,
+    mapping_spec: Union[Dict[str, str], MappingSpec],
+    engine: Union[str, BaseBindingEngine] = "jmespath",
+    target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
+) -> MappingResult[Any]:
+    """
+    Transforms source_data into a target payload using a direct mapping specification.
+    """
+    binding_engine = get_binding_engine(engine) if isinstance(engine, str) else engine
+    return binding_engine.transform(source_data, mapping_spec, target_schema=target_schema)
 
 
 def resolve_variables(
-    payload: Any,
-    context_store: Dict[str, Any],
+    payload: T,
+    context: Union[BindingContext, Mapping[str, Any]],
     engine: Union[str, BaseBindingEngine] = "jmespath",
-    target_schema: Optional[Dict[str, Any]] = None,
+    target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
     fallback_mapper: Optional[FallbackResolverProtocol] = None,
     directive: Optional[str] = None,
 ) -> Any:
     """
-    Convenience function to resolve variable references ($step_...) within any payload.
-    Supports deterministic binding (JMESPath/JSONPath/Dot) and optional LLM Fallback mapping.
+    Convenience function to resolve variable expressions ($var...) in a template payload.
+    Utilizes TemplateResolver for decoupled evaluation.
     """
+    binding_ctx = BindingContext.from_dict(context)
     binding_engine = get_binding_engine(engine) if isinstance(engine, str) else engine
-    resolved = binding_engine.resolve(
-        payload,
-        context_store,
-        target_schema=target_schema,
-    )
+    resolver = TemplateResolver(engine=binding_engine)
+
+    resolved = resolver.resolve_payload(payload, binding_ctx)
 
     if fallback_mapper and target_schema and VariableParser.has_unresolved_references(resolved):
-        resolved = fallback_mapper.repair_payload(
-            context_store=context_store,
+        repaired = fallback_mapper.repair_payload(
+            context_store=binding_ctx,
             target_schema=target_schema,
             partially_resolved_payload=resolved,
             directive=directive,
         )
+        return repaired
 
     return resolved
 
@@ -53,5 +89,15 @@ __all__ = [
     "get_binding_engine",
     "VariableParser",
     "FallbackResolverProtocol",
+    "TemplateResolver",
+    "evaluate_expression",
+    "transform_schema",
     "resolve_variables",
+    "BindingContext",
+    "EvaluationResult",
+    "MappingResult",
+    "MappingSpec",
+    "SupportedDataType",
 ]
+
+

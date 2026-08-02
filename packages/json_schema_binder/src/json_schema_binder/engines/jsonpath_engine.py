@@ -1,11 +1,18 @@
 import functools
-import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TypeVar, Union, Type, Mapping
 
 from jsonpath_ng.ext import parse
 from pydantic import BaseModel
 
 from json_schema_binder.base import BaseBindingEngine, BindingType, register_binding_engine
+from json_schema_binder.models import (
+    BindingContext,
+    EvaluationResult,
+    MappingResult,
+    MappingSpec,
+)
+
+T = TypeVar("T")
 
 
 @functools.lru_cache(maxsize=1024)
@@ -20,65 +27,94 @@ class JSONPathBindingEngine(BaseBindingEngine):
     def binding_type(self) -> BindingType:
         return BindingType.JSONPATH
 
-    def resolve(
+    def evaluate(self, expression: str, source_data: Any) -> EvaluationResult[Any]:
+        data = BindingContext.from_dict(source_data).data if isinstance(source_data, (dict, BindingContext, Mapping)) else source_data
+        if hasattr(source_data, "model_dump") and not isinstance(source_data, (dict, BindingContext)):
+            data = source_data.model_dump()
+
+
+        expr = expression.strip()
+        if not expr.startswith("$"):
+            if expr.startswith("."):
+                expr = "$" + expr
+            else:
+                expr = "$." + expr
+
+        try:
+            jsonpath_expr = _get_compiled_jsonpath(expr)
+            matches = [m.value for m in jsonpath_expr.find(data)]
+            if not matches:
+                return EvaluationResult(
+                    value=None,
+                    expression=expression,
+                    is_success=False,
+                    engine=self.binding_type.value,
+                )
+            if len(matches) == 1 and not any(op in expr for op in ("[*]", "[?", "..", ".*")):
+                res_val = matches[0]
+            else:
+                res_val = matches
+            return EvaluationResult(
+                value=res_val,
+                expression=expression,
+                is_success=True,
+                engine=self.binding_type.value,
+            )
+        except Exception as e:
+            return EvaluationResult(
+                value=None,
+                expression=expression,
+                is_success=False,
+                engine=self.binding_type.value,
+                error=str(e),
+            )
+
+    def transform(
         self,
-        val: Any,
-        context_store: Dict[str, Any],
-        target_schema: Optional[Dict[str, Any]] = None,
-        metadata_store: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Any:
-        if isinstance(val, str) and val.startswith("$"):
-            raw_ref = val[1:]
-            if not raw_ref:
-                return val
+        source_data: Any,
+        mapping_spec: Union[Dict[str, str], MappingSpec],
+        target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
+    ) -> MappingResult[Any]:
+        spec = mapping_spec.field_mappings if isinstance(mapping_spec, MappingSpec) else mapping_spec
+        output: Dict[str, Any] = {}
+        unresolved: list = []
+        errors: list = []
 
-            match = re.match(r"^([a-zA-Z0-9_]+)(.*)$", raw_ref)
-            if not match:
-                return val
+        for target_field, expr in spec.items():
+            res = self.evaluate(expr, source_data)
+            if res.is_success and res.value is not None:
+                output[target_field] = res.value
+            else:
+                unresolved.append(expr)
+                if res.error:
+                    errors.append(f"{target_field}: {res.error}")
 
-            var_key, rem_expr = match.groups()
-            if var_key not in context_store:
-                return val
-
-            data = context_store[var_key]
-            if isinstance(data, BaseModel):
-                data = data.model_dump()
-
-            if not rem_expr:
-                return data
-
-            expr = rem_expr.strip()
-            if not expr.startswith("$"):
-                if expr.startswith("."):
-                    expr = "$" + expr
-                else:
-                    expr = "$." + expr
-
+        if target_schema and isinstance(target_schema, type) and issubclass(target_schema, BaseModel):
             try:
-                jsonpath_expr = _get_compiled_jsonpath(expr)
-                matches = [m.value for m in jsonpath_expr.find(data)]
-                if not matches:
-                    return val
-                if len(matches) == 1 and not ("[*]" in expr or "[?" in expr or ".." in expr or ".*" in expr):
-                    return matches[0]
-                return matches
-            except Exception:
-                return val
+                validated_output = target_schema.model_validate(output)
+                return MappingResult(
+                    output=validated_output,
+                    is_success=len(unresolved) == 0,
+                    engine=self.binding_type.value,
+                    unresolved_expressions=unresolved,
+                    errors=errors,
+                )
+            except Exception as e:
+                errors.append(f"Target schema validation error: {e}")
 
-        elif isinstance(val, BaseModel):
-            return self.resolve(val.model_dump(), context_store, target_schema, metadata_store, **kwargs)
-        elif isinstance(val, dict):
-            return {k: self.resolve(v, context_store, target_schema, metadata_store, **kwargs) for k, v in val.items()}
-        elif isinstance(val, list):
-            return [self.resolve(v, context_store, target_schema, metadata_store, **kwargs) for v in val]
-        return val
+        return MappingResult(
+            output=output,
+            is_success=len(unresolved) == 0,
+            engine=self.binding_type.value,
+            unresolved_expressions=unresolved,
+            errors=errors,
+        )
 
     def get_system_prompt_instruction(self) -> str:
         return (
             "Variable Binding Engine: JSONPath\n"
-            "To reference and transform values from the source context data in the payload, write JSONPath expressions "
-            "directly after the variable name starting with $ (e.g., \"$var_name.products[?(@.price > 500)].name\", \"$var_name.regions[*].warehouse_matrix.*\", "
-            "\"$var_name.items[0]\"). "
-            "The engine will automatically evaluate and resolve these expressions using JSONPath syntax before final execution."
+            "To reference and transform values from the source context data, write direct JSONPath expressions "
+            "(e.g., \"$.products[?(@.price > 500)].name\", \"$.regions[*].warehouse_matrix.*\", \"$.items[0]\")."
         )
+
+

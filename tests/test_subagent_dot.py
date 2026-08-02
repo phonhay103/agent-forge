@@ -17,7 +17,7 @@ def test_dot_notation_valid_key():
             }
         }
     }
-    resolved = engine.resolve("$step_1.result.user", context)
+    resolved = engine.evaluate("step_1.result.user", context).value
     assert resolved == "Alice", f"Expected 'Alice', got {resolved}"
     print("test_dot_notation_valid_key passed")
 
@@ -29,7 +29,7 @@ def test_dot_notation_with_lists():
             "items": ["a", "b", "c"]
         }
     }
-    resolved = engine.resolve("$step_1.items.1", context)
+    resolved = engine.evaluate("step_1.items.1", context).value
     assert resolved == "b", f"Expected 'b', got {resolved}"
     print("test_dot_notation_with_lists passed")
 
@@ -39,9 +39,11 @@ def test_dot_notation_with_pydantic_model():
     context = {
         "step_1": DummyModel(id=10, name="TestUser")
     }
-    resolved = engine.resolve("$step_1.name", context)
+    resolved = engine.evaluate("step_1.name", context).value
     assert resolved == "TestUser", f"Expected 'TestUser', got {resolved}"
     print("test_dot_notation_with_pydantic_model passed")
+
+
 
 
 if __name__ == "__main__":

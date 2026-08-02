@@ -1,8 +1,16 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TypeVar, Union, Type, Mapping
 
 from pydantic import BaseModel
 
 from json_schema_binder.base import BaseBindingEngine, BindingType, register_binding_engine
+from json_schema_binder.models import (
+    BindingContext,
+    EvaluationResult,
+    MappingResult,
+    MappingSpec,
+)
+
+T = TypeVar("T")
 
 
 @register_binding_engine("dot_notation")
@@ -13,49 +21,95 @@ class DotNotationBindingEngine(BaseBindingEngine):
     def binding_type(self) -> BindingType:
         return BindingType.DOT_NOTATION
 
-    def resolve(
-        self,
-        val: Any,
-        context_store: Dict[str, Any],
-        target_schema: Optional[Dict[str, Any]] = None,
-        metadata_store: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Any:
-        if isinstance(val, str) and val.startswith("$"):
-            raw_ref = val[1:]
-            if not raw_ref:
-                return val
-
-            path = raw_ref.split(".")
-            var_key = path[0]
-            if var_key not in context_store:
-                return val
-
-            curr = context_store[var_key]
+    def _traverse_path(self, curr: Any, keys: list) -> Optional[Any]:
+        for key in keys:
+            if not key:
+                continue
             if isinstance(curr, BaseModel):
                 curr = curr.model_dump()
-
-            for key in path[1:]:
-                if isinstance(curr, dict) and key in curr:
-                    curr = curr[key]
-                elif isinstance(curr, list) and key.isdigit():
-                    curr = curr[int(key)]
+            if isinstance(curr, dict) and key in curr:
+                curr = curr[key]
+            elif isinstance(curr, list) and key.isdigit():
+                idx = int(key)
+                if 0 <= idx < len(curr):
+                    curr = curr[idx]
                 else:
-                    return val
-            return curr
+                    return None
+            else:
+                return None
+        return curr
 
-        elif isinstance(val, BaseModel):
-            return self.resolve(val.model_dump(), context_store, target_schema, metadata_store, **kwargs)
-        elif isinstance(val, dict):
-            return {k: self.resolve(v, context_store, target_schema, metadata_store, **kwargs) for k, v in val.items()}
-        elif isinstance(val, list):
-            return [self.resolve(v, context_store, target_schema, metadata_store, **kwargs) for v in val]
-        return val
+    def evaluate(self, expression: str, source_data: Any) -> EvaluationResult[Any]:
+        data = BindingContext.from_dict(source_data).data if isinstance(source_data, (dict, BindingContext, Mapping)) else source_data
+        if hasattr(source_data, "model_dump") and not isinstance(source_data, (dict, BindingContext)):
+            data = source_data.model_dump()
+
+
+        expr = expression.strip()
+        if expr.startswith("$"):
+            expr = expr[1:].strip()
+
+        if not expr:
+            return EvaluationResult(
+                value=data,
+                expression=expression,
+                is_success=True,
+                engine=self.binding_type.value,
+            )
+
+        keys = expr.split(".")
+        res = self._traverse_path(data, keys)
+        return EvaluationResult(
+            value=res,
+            expression=expression,
+            is_success=res is not None,
+            engine=self.binding_type.value,
+        )
+
+    def transform(
+        self,
+        source_data: Any,
+        mapping_spec: Union[Dict[str, str], MappingSpec],
+        target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
+    ) -> MappingResult[Any]:
+        spec = mapping_spec.field_mappings if isinstance(mapping_spec, MappingSpec) else mapping_spec
+        output: Dict[str, Any] = {}
+        unresolved: list = []
+        errors: list = []
+
+        for target_field, expr in spec.items():
+            res = self.evaluate(expr, source_data)
+            if res.is_success and res.value is not None:
+                output[target_field] = res.value
+            else:
+                unresolved.append(expr)
+
+        if target_schema and isinstance(target_schema, type) and issubclass(target_schema, BaseModel):
+            try:
+                validated_output = target_schema.model_validate(output)
+                return MappingResult(
+                    output=validated_output,
+                    is_success=len(unresolved) == 0,
+                    engine=self.binding_type.value,
+                    unresolved_expressions=unresolved,
+                    errors=errors,
+                )
+            except Exception as e:
+                errors.append(f"Target schema validation error: {e}")
+
+        return MappingResult(
+            output=output,
+            is_success=len(unresolved) == 0,
+            engine=self.binding_type.value,
+            unresolved_expressions=unresolved,
+            errors=errors,
+        )
 
     def get_system_prompt_instruction(self) -> str:
         return (
             "Variable Binding Engine: Dot Notation\n"
-            "To reference values from the source context data in the payload, use standard dot notation "
-            "after the variable name starting with $ (e.g., \"$var_name.field_name\", \"$var_name.items.0\"). "
-            "The engine will automatically extract the specified key or list index before final execution."
+            "To reference values from the source context data, use standard dot notation "
+            "(e.g., \"field_name\", \"items.0\")."
         )
+
+

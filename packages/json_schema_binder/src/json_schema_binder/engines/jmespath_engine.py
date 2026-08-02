@@ -1,11 +1,18 @@
 import functools
-import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TypeVar, Union, Type, Mapping
 
 import jmespath
 from pydantic import BaseModel
 
 from json_schema_binder.base import BaseBindingEngine, BindingType, register_binding_engine
+from json_schema_binder.models import (
+    BindingContext,
+    EvaluationResult,
+    MappingResult,
+    MappingSpec,
+)
+
+T = TypeVar("T")
 
 
 @functools.lru_cache(maxsize=1024)
@@ -20,65 +27,89 @@ class JMESPathBindingEngine(BaseBindingEngine):
     def binding_type(self) -> BindingType:
         return BindingType.JMESPATH
 
-    def resolve(
+    def evaluate(self, expression: str, source_data: Any) -> EvaluationResult[Any]:
+        data = BindingContext.from_dict(source_data).data if isinstance(source_data, (dict, BindingContext, Mapping)) else source_data
+        if hasattr(source_data, "model_dump") and not isinstance(source_data, (dict, BindingContext)):
+            data = source_data.model_dump()
+
+
+        expr = expression.strip()
+        if expr.startswith("$"):
+            expr = expr[1:].strip()
+
+        if not expr:
+            return EvaluationResult(
+                value=data,
+                expression=expression,
+                is_success=True,
+                engine=self.binding_type.value,
+            )
+
+        try:
+            compiled = _get_compiled_jmespath(expr)
+            res = compiled.search(data)
+            return EvaluationResult(
+                value=res,
+                expression=expression,
+                is_success=res is not None,
+                engine=self.binding_type.value,
+            )
+        except Exception as e:
+            return EvaluationResult(
+                value=None,
+                expression=expression,
+                is_success=False,
+                engine=self.binding_type.value,
+                error=str(e),
+            )
+
+    def transform(
         self,
-        val: Any,
-        context_store: Dict[str, Any],
-        target_schema: Optional[Dict[str, Any]] = None,
-        metadata_store: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Any:
-        if isinstance(val, str) and val.startswith("$"):
-            raw_ref = val[1:]
-            if not raw_ref:
-                return val
+        source_data: Any,
+        mapping_spec: Union[Dict[str, str], MappingSpec],
+        target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
+    ) -> MappingResult[Any]:
+        spec = mapping_spec.field_mappings if isinstance(mapping_spec, MappingSpec) else mapping_spec
+        output: Dict[str, Any] = {}
+        unresolved: list = []
+        errors: list = []
 
-            match = re.match(r"^([a-zA-Z0-9_]+)(.*)$", raw_ref)
-            if not match:
-                return val
+        for target_field, expr in spec.items():
+            res = self.evaluate(expr, source_data)
+            if res.is_success and res.value is not None:
+                output[target_field] = res.value
+            else:
+                unresolved.append(expr)
+                if res.error:
+                    errors.append(f"{target_field}: {res.error}")
 
-            var_key, rem_expr = match.groups()
-            if var_key not in context_store:
-                return val
-
-            data = context_store[var_key]
-            if isinstance(data, BaseModel):
-                data = data.model_dump()
-
-            if not rem_expr:
-                return data
-
-            expr = rem_expr.strip()
-            if expr.startswith("."):
-                expr = expr[1:].strip()
-            elif expr.startswith("|"):
-                expr = expr.strip()
-
-            if not expr:
-                return data
-
+        if target_schema and isinstance(target_schema, type) and issubclass(target_schema, BaseModel):
             try:
-                compiled = _get_compiled_jmespath(expr)
-                res = compiled.search(data)
-                if res is not None:
-                    return res
-                return val
-            except Exception:
-                return val
+                validated_output = target_schema.model_validate(output)
+                return MappingResult(
+                    output=validated_output,
+                    is_success=len(unresolved) == 0,
+                    engine=self.binding_type.value,
+                    unresolved_expressions=unresolved,
+                    errors=errors,
+                )
+            except Exception as e:
+                errors.append(f"Target schema validation error: {e}")
 
-        elif isinstance(val, BaseModel):
-            return self.resolve(val.model_dump(), context_store, target_schema, metadata_store, **kwargs)
-        elif isinstance(val, dict):
-            return {k: self.resolve(v, context_store, target_schema, metadata_store, **kwargs) for k, v in val.items()}
-        elif isinstance(val, list):
-            return [self.resolve(v, context_store, target_schema, metadata_store, **kwargs) for v in val]
-        return val
+        return MappingResult(
+            output=output,
+            is_success=len(unresolved) == 0,
+            engine=self.binding_type.value,
+            unresolved_expressions=unresolved,
+            errors=errors,
+        )
 
     def get_system_prompt_instruction(self) -> str:
         return (
             "Variable Binding Engine: JMESPath\n"
-            "To reference and transform values from the source context data in the payload, write JMESPath expressions "
-            "directly after the variable name starting with $ (e.g., \"$var_name.items[?price > `500`]\", \"$var_name.regions[*].warehouse_matrix[][]\", "
-            "\"$var_name.division_summaries | max_by(@, &total_budget)\", \"$var_name.skus[0]\"). "
-            "The engine will automatically evaluate and resolve these expressions using JMESPath syntax before final execution."
+            "To reference and transform values from the source context data, write direct JMESPath expressions "
+            "(e.g., \"items[?price > `500`].name\", \"regions[*].warehouse_matrix[][]\", "
+            "\"division_summaries | max_by(@, &total_budget)\", \"skus[0]\")."
         )
+
+

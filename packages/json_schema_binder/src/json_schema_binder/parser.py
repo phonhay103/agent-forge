@@ -1,7 +1,7 @@
 import re
-from typing import Any
+from typing import Any, List
 
-# Match variable reference prefix (e.g., "$var_1", "$step_1", "$step_calculate")
+# Match variable reference prefix (e.g., "$var_1", "$step_1", "$var_name")
 VAR_REF_RE = re.compile(r"^\$[a-zA-Z0-9_]+")
 
 
@@ -23,7 +23,7 @@ class VariableParser:
         """
         if cls.is_variable_reference(v):
             return True
-        if isinstance(v, (str, int, float, bool)) or v is None:
+        if isinstance(v, (str, int, float, bool, bytes)) or v is None:
             return False
         if isinstance(v, dict):
             return any(cls.has_unresolved_references(val) for val in v.values())
@@ -32,3 +32,22 @@ class VariableParser:
         if hasattr(v, "model_dump"):
             return cls.has_unresolved_references(v.model_dump())
         return False
+
+    @classmethod
+    def extract_unresolved_references(cls, v: Any) -> List[str]:
+        """
+        Recursively collects all unresolved variable reference strings in a payload.
+        """
+        unresolved: List[str] = []
+        if cls.is_variable_reference(v):
+            unresolved.append(str(v))
+        elif isinstance(v, dict):
+            for val in v.values():
+                unresolved.extend(cls.extract_unresolved_references(val))
+        elif isinstance(v, list):
+            for val in v:
+                unresolved.extend(cls.extract_unresolved_references(val))
+        elif hasattr(v, "model_dump"):
+            unresolved.extend(cls.extract_unresolved_references(v.model_dump()))
+        return unresolved
+

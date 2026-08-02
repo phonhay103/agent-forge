@@ -4,7 +4,14 @@ from typing import Any, List, Dict, Union, Optional
 from pydantic import BaseModel, Field
 
 from src.core.planner.planner import Plan, PlanStep
-from json_schema_binder import BaseBindingEngine, get_binding_engine, LLMFallbackMapper, VariableParser
+from json_schema_binder import (
+    BaseBindingEngine,
+    get_binding_engine,
+    LLMFallbackMapper,
+    VariableParser,
+    resolve_variables,
+    BindingContext,
+)
 from src.core.engine.protocols import MCPSessionProtocol
 
 logger = logging.getLogger("headless_core")
@@ -57,30 +64,19 @@ class HeadlessExecutor:
         directive: Any = None
     ) -> Any:
         """
-        Delegates variable resolution to the configured independent binding engine
-        (e.g. JMESPath, JSONPath, Dot Notation, or LLM Natural Language Directive).
+        Delegates variable resolution to the configured independent binding engine.
         """
-        resolved = self.binding_engine.resolve(
-            val,
-            context_store,
+        fallback_mapper = self.fallback_mapper if enable_llm_fallback else None
+        return resolve_variables(
+            payload=val,
+            context=context_store,
+            engine=self.binding_engine,
             target_schema=target_tool_input_schema,
-            step_schemas_store=step_schemas_store,
+            fallback_mapper=fallback_mapper,
+            directive=directive,
         )
 
-        if enable_llm_fallback and target_tool_input_schema and VariableParser.has_unresolved_references(resolved):
-            logger.warning(
-                "Deterministic binding left unresolved references in arguments. "
-                "Triggering LLM Fallback Mapper..."
-            )
-            resolved = self.fallback_mapper.repair_payload(
-                context_store=context_store,
-                target_schema=target_tool_input_schema,
-                partially_resolved_payload=resolved,
-                directive=directive
-            )
-            logger.info("LLM Fallback Mapper repair complete.")
 
-        return resolved
 
     async def run_plan(self, plan: Plan) -> ExecutionContext:
         ctx = ExecutionContext()

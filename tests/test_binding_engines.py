@@ -26,58 +26,54 @@ def test_factory_creation():
 def test_jmespath_binding_engine():
     engine = JMESPathBindingEngine()
     context = {
-        "step_1": {
-            "products": [
-                {"name": "Laptop", "price": 1200},
-                {"name": "Mouse", "price": 25}
-            ]
-        }
+        "products": [
+            {"name": "Laptop", "price": 1200},
+            {"name": "Mouse", "price": 25}
+        ]
     }
 
     instruction = engine.get_system_prompt_instruction()
     assert "Variable Binding Engine: JMESPath" in instruction
 
-    res = engine.resolve("$step_1.products[?price > `100`].name", context)
-    assert res == ["Laptop"]
+    res = engine.evaluate("products[?price > `100`].name", context)
+    assert res.value == ["Laptop"]
 
 
 def test_jsonpath_binding_engine():
     engine = JSONPathBindingEngine()
     context = {
-        "step_1": {
-            "products": [
-                {"name": "Laptop", "price": 1200},
-                {"name": "Mouse", "price": 25}
-            ]
-        }
+        "products": [
+            {"name": "Laptop", "price": 1200},
+            {"name": "Mouse", "price": 25}
+        ]
     }
 
     instruction = engine.get_system_prompt_instruction()
     assert "Variable Binding Engine: JSONPath" in instruction
 
-    res = engine.resolve("$step_1.products[?(@.price > 100)].name", context)
-    assert res == ["Laptop"]
+    res = engine.evaluate("$.products[?(@.price > 100)].name", context)
+    assert res.value == ["Laptop"]
 
-    res_single = engine.resolve("$step_1.products[0].name", context)
-    assert res_single == "Laptop"
+    res_single = engine.evaluate("$.products[0].name", context)
+    assert res_single.value == "Laptop"
 
 
 def test_dot_notation_binding_engine():
     engine = DotNotationBindingEngine()
     context = {
-        "step_1": {
-            "products": [
-                {"name": "Laptop", "price": 1200},
-                {"name": "Mouse", "price": 25}
-            ]
-        }
+        "products": [
+            {"name": "Laptop", "price": 1200},
+            {"name": "Mouse", "price": 25}
+        ]
     }
 
     instruction = engine.get_system_prompt_instruction()
     assert "Variable Binding Engine: Dot Notation" in instruction
 
-    res = engine.resolve("$step_1.products.0.name", context)
-    assert res == "Laptop"
+    res = engine.evaluate("products.0.name", context)
+    assert res.value == "Laptop"
+
+
 
 
 import os
