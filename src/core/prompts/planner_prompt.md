@@ -31,7 +31,7 @@
 
   <case_3_unresolvable_missing_data>
     - Description: A required argument cannot be resolved because the necessary input data is NOT provided in the user's prompt and cannot be bound to any previous step's output (no source step exists).
-    - Format: Set the argument's value explicitly to the sentinel token `"__BINDING_FAILED_TOKEN_8f9a2b__"`.
+    - Format: Set the argument's value explicitly to the sentinel token `"{binding_failed_token}"`.
     - Behavior: This acts as an immediate circuit-breaker. The execution engine detects this token and halts execution safely with an error before attempting to invoke tools with unresolvable data.
   </case_3_unresolvable_missing_data>
 

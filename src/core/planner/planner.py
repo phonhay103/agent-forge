@@ -5,10 +5,21 @@ import json
 
 from src.core.planner.models import PlanStep, Plan
 
+import os
+
+DEFAULT_BINDING_FAILED_TOKEN = os.getenv("BINDING_FAILED_TOKEN", "__BINDING_FAILED__")
+
 class Planner:
-    def __init__(self, model: Optional[Any] = None, model_name: str = "gemini-2.5-flash"):
+    def __init__(
+        self,
+        model: Optional[Any] = None,
+        model_name: str = "gemini-2.5-flash",
+        binding_failed_token: Optional[str] = None
+    ):
         self.model = model
         self.model_name = model_name
+        self.binding_failed_token = binding_failed_token or DEFAULT_BINDING_FAILED_TOKEN
+
     def create_plan(
         self,
         user_query: str,
@@ -35,6 +46,7 @@ class Planner:
                 "available_tools": json.dumps(available_tools_metadata, indent=2),
                 "binding_instruction": binding_instruction,
                 "fallback_instruction": fallback_instruction,
+                "binding_failed_token": self.binding_failed_token,
                 "user_query": user_query
             },
             schema=Plan,

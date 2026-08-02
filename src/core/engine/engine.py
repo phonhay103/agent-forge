@@ -14,7 +14,11 @@ from json_schema_binder import (
 )
 from src.core.engine.protocols import MCPSessionProtocol
 
+import os
+
 logger = logging.getLogger("headless_core")
+
+DEFAULT_BINDING_FAILED_TOKEN = os.getenv("BINDING_FAILED_TOKEN", "__BINDING_FAILED__")
 
 class StepResult(BaseModel):
     step_id: str
@@ -35,7 +39,8 @@ class HeadlessExecutor:
         session: MCPSessionProtocol,
         binding_engine: Union[str, BaseBindingEngine] = "jmespath",
         enable_llm_fallback: bool = False,
-        model: Optional[Any] = None
+        model: Optional[Any] = None,
+        binding_failed_token: Optional[str] = None
     ):
         self.session = session
         if isinstance(binding_engine, str):
@@ -44,39 +49,39 @@ class HeadlessExecutor:
             self.binding_engine = binding_engine
         
         self.enable_llm_fallback = enable_llm_fallback
-        self.step_schemas_store = {}
+        self.model = model
+        self.binding_failed_token = binding_failed_token or DEFAULT_BINDING_FAILED_TOKEN
+        self.fallback_mapper = LLMFallbackMapper(model=self.model) if self.enable_llm_fallback else None
+        self.step_schemas_store: Dict[str, Any] = {}
+        
         if self.enable_llm_fallback:
-            if model is None:
-                from src.core.llm_client import get_llm_client
-                model = get_llm_client()
-            self.fallback_mapper = LLMFallbackMapper(model=model)
             logger.info("HeadlessExecutor initialized with automatic LLM Fallback mapping.")
         else:
             logger.info("HeadlessExecutor initialized with strict deterministic variable binding.")
 
     def _resolve_variables(
         self,
-        val: Any,
-        context_store: Dict[str, Any],
-        target_tool_input_schema: Any = None,
-        step_schemas_store: Any = None,
+        args: Any,
+        store: Dict[str, Any],
+        target_tool_input_schema: Optional[Dict[str, Any]] = None,
+        step_schemas_store: Optional[Dict[str, Any]] = None,
         enable_llm_fallback: bool = False,
-        directive: Any = None
+        directive: Optional[str] = None
     ) -> Any:
-        """
-        Delegates variable resolution to the configured independent binding engine.
-        """
-        fallback_mapper = self.fallback_mapper if enable_llm_fallback else None
+        context = BindingContext.from_dict(store)
+        if step_schemas_store:
+            context.step_schemas.update(step_schemas_store)
+
+        fallback = self.fallback_mapper if enable_llm_fallback else None
+
         return resolve_variables(
-            payload=val,
-            context=context_store,
+            payload=args,
+            context=context,
             engine=self.binding_engine,
             target_schema=target_tool_input_schema,
-            fallback_mapper=fallback_mapper,
-            directive=directive,
+            fallback_mapper=fallback,
+            directive=directive
         )
-
-
 
     async def run_plan(self, plan: Plan) -> ExecutionContext:
         ctx = ExecutionContext()
@@ -84,9 +89,10 @@ class HeadlessExecutor:
         
         # Fetch tool definitions exactly once to avoid repetitive list_tools network calls
         tools_list = await self.session.list_tools()
-        tools_map = {t.name: t for t in tools_list}
+        tools_map = {t.name: t for t in tools_list.tools}
 
         for step in plan.steps:
+            logger.info(f"Executing step '{step.id}' using tool '{step.tool_name}'...")
             target_tool_metadata = tools_map.get(step.tool_name)
             target_tool_input_schema = target_tool_metadata.input_schema if target_tool_metadata else {}
             # Resolve references to previous step outputs with tool schema context
@@ -99,11 +105,11 @@ class HeadlessExecutor:
                 directive=getattr(step, "directive", None)
             )
             
-            BINDING_FAILED_TOKEN = "__BINDING_FAILED_TOKEN_8f9a2b__"
+            failed_token = self.binding_failed_token
 
             def find_unresolved_issue(v: Any) -> Optional[str]:
-                if v == BINDING_FAILED_TOKEN:
-                    return f"Sent by Planner due to missing input data ('{BINDING_FAILED_TOKEN}')"
+                if v == failed_token:
+                    return f"Sent by Planner due to missing input data ('{failed_token}')"
                 if VariableParser.is_variable_reference(v):
                     return f"Failed to evaluate expression '{v}'"
                 if isinstance(v, dict):
