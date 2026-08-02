@@ -108,8 +108,14 @@ class DotNotationBindingEngine(BaseBindingEngine):
     def get_system_prompt_instruction(self) -> str:
         return (
             "Variable Binding Engine: Dot Notation\n"
-            "To reference values from the source context data, use standard dot notation "
-            "(e.g., \"field_name\", \"items.0\")."
+            "To reference values from the source context data, use standard dot notation only "
+            "(e.g., \"$step_1.field_name\", \"$step_1.items.0\").\n"
+            "CRITICAL REQUIREMENT FOR DOT NOTATION:\n"
+            "- Do NOT use bracket filters, query expressions, or wildcards like '[?(@.price > 800)]' or '[*]'.\n"
+            "- Variable bindings MUST be simple dot-separated paths containing only letters, numbers, underscores, and zero-based numeric array indices (e.g. '$step_1.items' or '$step_1.items.0.price')."
         )
+
+    def get_regex_pattern(self) -> str:
+        return r"^(\$?[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*)$"
 
 

@@ -1,5 +1,6 @@
+import re
 from typing import List, Any, Optional, Dict, Union
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
 class PlanStep(BaseModel):
     id: str = Field(description="Unique identifier for the step, e.g., step_1")
@@ -15,6 +16,30 @@ class PlanStep(BaseModel):
         default=None,
         description="The reasoning or purpose behind this execution step"
     )
+
+    @field_validator("args")
+    @classmethod
+    def validate_args_pattern(cls, v: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+        regex_pattern = info.context.get("regex_pattern") if info.context else None
+        if not regex_pattern:
+            return v
+        regex = re.compile(regex_pattern)
+
+        def _check_value(val: Any):
+            if isinstance(val, str) and val.startswith("$") and not val.startswith("__BINDING_FAILED"):
+                if not regex.match(val):
+                    raise ValueError(
+                        f"Variable expression '{val}' does not conform to the active binding engine's representative regex pattern: {regex_pattern}"
+                    )
+            elif isinstance(val, dict):
+                for item in val.values():
+                    _check_value(item)
+            elif isinstance(val, list):
+                for item in val:
+                    _check_value(item)
+
+        _check_value(v)
+        return v
 
 class Plan(BaseModel):
     steps: List[PlanStep] = Field(description="Ordered list of steps to execute sequentially")

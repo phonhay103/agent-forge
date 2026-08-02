@@ -62,4 +62,8 @@ class BaseBindingEngine(ABC):
         """Returns dynamic instructions for LLM System Prompt explaining how to format variable references."""
         pass
 
+    def get_regex_pattern(self) -> Optional[str]:
+        """Returns the official representative regex pattern for this binding engine, or None if not defined."""
+        return None
+
 

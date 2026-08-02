@@ -117,4 +117,7 @@ class JSONPathBindingEngine(BaseBindingEngine):
             "(e.g., \"$.products[?(@.price > 500)].name\", \"$.regions[*].warehouse_matrix.*\", \"$.items[0]\")."
         )
 
+    def get_regex_pattern(self) -> str:
+        return r"^(\$?\.?[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+|\[.*?\])*)$"
+
 

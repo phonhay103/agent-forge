@@ -23,6 +23,13 @@ from src.core.test_inputs import TEST_SUITE
 MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://127.0.0.1:8000/mcp")
 
 
+def format_exception(e: BaseException) -> str:
+    """Recursively extract human-readable error messages from ExceptionGroup or Exception."""
+    if isinstance(e, BaseExceptionGroup):
+        return "\n".join(format_exception(sub) for sub in e.exceptions)
+    return f"{type(e).__name__}: {e}"
+
+
 async def main():
     load_dotenv()
 
@@ -69,13 +76,17 @@ async def main():
                 tools_metadata = [t.model_dump() for t in tools_list.tools]
                 print(f"Discovered {len(tools_metadata)} tools from MCP server.\n")
 
-                planner = Planner()
-                plan: Plan = planner.create_plan(
-                    task,
-                    tools_metadata,
-                    binding_type=binding_type,
-                    enable_llm_fallback=enable_llm_fallback
-                )
+                try:
+                    planner = Planner()
+                    plan: Plan = planner.create_plan(
+                        task,
+                        tools_metadata,
+                        binding_type=binding_type,
+                        enable_llm_fallback=enable_llm_fallback
+                    )
+                except Exception as plan_err:
+                    print(f"\n[PLANNING ERROR] Failed to create plan: {format_exception(plan_err)}")
+                    return
 
                 print("--- Generated Plan (Pydantic Model) ---")
                 print(plan.model_dump_json(indent=2))
@@ -94,11 +105,21 @@ async def main():
                 except ValueError as ve:
                     print(f"\n[EXECUTION HALTED] {ve}")
                 except Exception as ex:
-                    print(f"\n[EXECUTION ERROR] {ex}")
-    except Exception as conn_err:
-        print(f"\nError: Could not connect to MCP Server at {MCP_SERVER_URL}: {conn_err}")
+                    print(f"\n[EXECUTION ERROR] {format_exception(ex)}")
+    except (ConnectionError, OSError) as conn_err:
+        print(f"\nError: Could not connect to MCP Server at {MCP_SERVER_URL}: {format_exception(conn_err)}")
         print("Please ensure the MCP server is running independently ('make server' or 'uv run python -m src.mcp.server').")
         sys.exit(1)
+    except Exception as general_err:
+        err_msg = format_exception(general_err)
+        if "connect" in err_msg.lower() or "refused" in err_msg.lower() or "404" in err_msg.lower():
+            print(f"\nError: Could not connect to MCP Server at {MCP_SERVER_URL}: {err_msg}")
+            print("Please ensure the MCP server is running independently ('make server' or 'uv run python -m src.mcp.server').")
+        else:
+            print(f"\n[AGENT ERROR] {err_msg}")
+        sys.exit(1)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
+

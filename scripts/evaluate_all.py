@@ -21,6 +21,12 @@ from src.core.main import MCP_SERVER_URL
 load_dotenv()
 
 
+def format_exception(e: BaseException) -> str:
+    if isinstance(e, BaseExceptionGroup):
+        return "\n".join(format_exception(sub) for sub in e.exceptions)
+    return f"{type(e).__name__}: {e}"
+
+
 async def run_single_test(
     tc: TestCase,
     binding_type: str = "jmespath",
@@ -44,14 +50,19 @@ async def run_single_test(
                 tools_list = await session.list_tools()
                 tools_metadata = [t.model_dump() for t in tools_list.tools]
                 
-                planner = Planner()
-                plan: Plan = planner.create_plan(
-                    tc.query,
-                    tools_metadata,
-                    binding_type=binding_type,
-                    enable_llm_fallback=enable_llm_fallback
-                )
-                report["plan"] = plan.model_dump()
+                try:
+                    planner = Planner()
+                    plan: Plan = planner.create_plan(
+                        tc.query,
+                        tools_metadata,
+                        binding_type=binding_type,
+                        enable_llm_fallback=enable_llm_fallback
+                    )
+                    report["plan"] = plan.model_dump()
+                except Exception as plan_err:
+                    report["status"] = "PLANNING_ERROR"
+                    report["error"] = format_exception(plan_err)
+                    return report
                 
                 mcp_client = MCPClient(session)
                 executor = HeadlessExecutor(
@@ -69,10 +80,14 @@ async def run_single_test(
                     report["error"] = str(ve)
                 except Exception as e:
                     report["status"] = "FAILED"
-                    report["error"] = str(e)
+                    report["error"] = format_exception(e)
     except Exception as outer_e:
-        report["status"] = "SERVER_ERROR"
-        report["error"] = str(outer_e)
+        err_msg = format_exception(outer_e)
+        if "connect" in err_msg.lower() or "refused" in err_msg.lower():
+            report["status"] = "SERVER_ERROR"
+        else:
+            report["status"] = "ERROR"
+        report["error"] = err_msg
                 
     return report
 

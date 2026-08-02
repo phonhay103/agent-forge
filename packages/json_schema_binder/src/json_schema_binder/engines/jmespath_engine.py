@@ -112,4 +112,7 @@ class JMESPathBindingEngine(BaseBindingEngine):
             "\"division_summaries | max_by(@, &total_budget)\", \"skus[0]\")."
         )
 
+    def get_regex_pattern(self) -> str:
+        return r"^(\$?[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+|\[.*?\]|\s*\|\s*.*|\{.*?\})*)$"
+
 

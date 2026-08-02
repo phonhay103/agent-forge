@@ -29,6 +29,7 @@ class Planner:
     ) -> Plan:
         engine = get_binding_engine(binding_type) if isinstance(binding_type, str) else binding_type
         binding_instruction = engine.get_system_prompt_instruction()
+        regex_pattern = engine.get_regex_pattern() if hasattr(engine, "get_regex_pattern") else None
 
         fallback_instruction = ""
         if enable_llm_fallback:
@@ -54,4 +55,8 @@ class Planner:
             temperature=0.0,
             base_model=self.model
         )
+
+        if regex_pattern:
+            plan_obj = Plan.model_validate(plan_obj.model_dump(), context={"regex_pattern": regex_pattern})
+
         return plan_obj
