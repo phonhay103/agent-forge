@@ -1,4 +1,4 @@
-from src.core.binding.jsonpath_engine import JSONPathBindingEngine
+from json_schema_binder import JSONPathBindingEngine
 from pydantic import BaseModel
 import sys
 

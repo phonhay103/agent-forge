@@ -1,7 +1,13 @@
+import argparse
 import asyncio
+import json
 import os
 import sys
-import json
+from pathlib import Path
+
+# Ensure repo root is in sys.path for direct execution
+sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
+
 from dotenv import load_dotenv
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
@@ -14,7 +20,12 @@ from src.core.main import ensure_server_running, MCP_SERVER_URL
 
 load_dotenv()
 
-async def run_single_test(tc: TestCase, binding_type: str = "jmespath", enable_llm_fallback: bool = False):
+
+async def run_single_test(
+    tc: TestCase,
+    binding_type: str = "jmespath",
+    enable_llm_fallback: bool = False
+) -> dict:
     server_proc = await ensure_server_running(MCP_SERVER_URL)
     report = {
         "id": tc.id,
@@ -73,24 +84,73 @@ async def run_single_test(tc: TestCase, binding_type: str = "jmespath", enable_l
                 
     return report
 
+
 async def main():
+    parser = argparse.ArgumentParser(description="Run Evaluation Suite for MCP Headless Core.")
+    parser.add_argument(
+        "--engine", "-e",
+        choices=["jmespath", "jsonpath", "dot_notation"],
+        default="jmespath",
+        help="Variable binding engine to evaluate (default: jmespath)"
+    )
+    parser.add_argument(
+        "--fallback", "-f",
+        action="store_true",
+        help="Enable Automatic LLM Direct Mapping Fallback"
+    )
+    parser.add_argument(
+        "--tc", "-t",
+        type=str,
+        default=None,
+        help="Run a specific test case by ID (e.g., TC-01)"
+    )
+    parser.add_argument(
+        "--output", "-o",
+        type=str,
+        default="evaluation_report.json",
+        help="Output report JSON file path (default: evaluation_report.json)"
+    )
+    args = parser.parse_args()
+
     print("==================================================")
-    print("   Running Comprehensive Evaluation of All TCs    ")
+    print("   Running Comprehensive Evaluation Suite         ")
+    print(f"   Engine: {args.engine.upper()} | Fallback: {args.fallback}")
     print("==================================================")
-    
+
+    test_cases = TEST_SUITE.test_cases
+    if args.tc:
+        test_cases = [tc for tc in test_cases if tc.id.upper() == args.tc.upper()]
+        if not test_cases:
+            print(f"Error: Test case with ID '{args.tc}' not found.")
+            sys.exit(1)
+
     results = []
-    for tc in TEST_SUITE.test_cases:
+    for tc in test_cases:
         print(f"\n[RUNNING] {tc.id}: {tc.name}...")
-        res = await run_single_test(tc)
+        res = await run_single_test(tc, binding_type=args.engine, enable_llm_fallback=args.fallback)
         results.append(res)
         print(f"[STATUS] {tc.id} -> {res['status']}")
         if res["error"]:
             print(f"  Note/Error: {res['error']}")
-            
-    with open("evaluation_report.json", "w", encoding="utf-8") as f:
+
+    with open(args.output, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
-        
-    print("\nSaved report to evaluation_report.json")
+
+    # Print Summary Table
+    print("\n" + "=" * 60)
+    print("                EVALUATION SUMMARY RESULTS                 ")
+    print("=" * 60)
+    passed = sum(1 for r in results if r['status'] == 'PASSED')
+    halted = sum(1 for r in results if r['status'] == 'HALTED_BY_DESIGN')
+    failed = sum(1 for r in results if r['status'] in ('FAILED', 'SERVER_ERROR'))
+    
+    print(f"Total Evaluated: {len(results)}")
+    print(f"PASSED:           {passed} ({passed / len(results) * 100:.1f}%)")
+    print(f"HALTED_BY_DESIGN: {halted} ({halted / len(results) * 100:.1f}%)")
+    print(f"FAILED/ERROR:     {failed} ({failed / len(results) * 100:.1f}%)")
+    print(f"Report saved to:  {args.output}")
+    print("=" * 60)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -1,9 +1,12 @@
 from typing import Union
-from src.core.binding.base import BaseBindingEngine, BindingType, _BINDING_ENGINES_REGISTRY
+from json_schema_binder.base import BaseBindingEngine, BindingType, _BINDING_ENGINES_REGISTRY
 # Import concrete engines to ensure decorator registration triggers at startup
-from src.core.binding.jmespath_engine import JMESPathBindingEngine
-from src.core.binding.jsonpath_engine import JSONPathBindingEngine
-from src.core.binding.dot_engine import DotNotationBindingEngine
+from json_schema_binder.engines import (
+    JMESPathBindingEngine,
+    JSONPathBindingEngine,
+    DotNotationBindingEngine,
+)
+
 
 def get_binding_engine(binding_type: Union[str, BindingType] = BindingType.JMESPATH) -> BaseBindingEngine:
     """

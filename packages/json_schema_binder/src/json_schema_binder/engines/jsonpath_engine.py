@@ -1,11 +1,11 @@
-import re
-
 import functools
+import re
 from typing import Any, Dict, Optional
+
 from jsonpath_ng.ext import parse
 from pydantic import BaseModel
-from src.core.binding.base import BaseBindingEngine, BindingType, register_binding_engine
 
+from json_schema_binder.base import BaseBindingEngine, BindingType, register_binding_engine
 
 
 @functools.lru_cache(maxsize=1024)
@@ -15,8 +15,6 @@ def _get_compiled_jsonpath(expr: str):
 
 @register_binding_engine("jsonpath")
 @register_binding_engine("json_path")
-
-
 class JSONPathBindingEngine(BaseBindingEngine):
     @property
     def binding_type(self) -> BindingType:
@@ -26,8 +24,9 @@ class JSONPathBindingEngine(BaseBindingEngine):
         self,
         val: Any,
         context_store: Dict[str, Any],
-        target_tool_input_schema: Optional[Dict[str, Any]] = None,
-        step_schemas_store: Optional[Dict[str, Dict[str, Any]]] = None,
+        target_schema: Optional[Dict[str, Any]] = None,
+        metadata_store: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> Any:
         if isinstance(val, str) and val.startswith("$"):
             raw_ref = val[1:]
@@ -38,11 +37,11 @@ class JSONPathBindingEngine(BaseBindingEngine):
             if not match:
                 return val
 
-            step_id, rem_expr = match.groups()
-            if step_id not in context_store:
+            var_key, rem_expr = match.groups()
+            if var_key not in context_store:
                 return val
 
-            data = context_store[step_id]
+            data = context_store[var_key]
             if isinstance(data, BaseModel):
                 data = data.model_dump()
 
@@ -68,18 +67,18 @@ class JSONPathBindingEngine(BaseBindingEngine):
                 return val
 
         elif isinstance(val, BaseModel):
-            return self.resolve(val.model_dump(), context_store, target_tool_input_schema, step_schemas_store)
+            return self.resolve(val.model_dump(), context_store, target_schema, metadata_store, **kwargs)
         elif isinstance(val, dict):
-            return {k: self.resolve(v, context_store, target_tool_input_schema, step_schemas_store) for k, v in val.items()}
+            return {k: self.resolve(v, context_store, target_schema, metadata_store, **kwargs) for k, v in val.items()}
         elif isinstance(val, list):
-            return [self.resolve(v, context_store, target_tool_input_schema, step_schemas_store) for v in val]
+            return [self.resolve(v, context_store, target_schema, metadata_store, **kwargs) for v in val]
         return val
 
     def get_system_prompt_instruction(self) -> str:
         return (
             "Variable Binding Engine: JSONPath\n"
-            "To reference and transform outputs from previous steps in tool arguments, write JSONPath expressions "
-            "directly after $step_id (e.g. \"$step_1.products[?(@.price > 500)].name\", \"$step_1.regions[*].warehouse_matrix.*\", "
-            "\"$step_1.items[0]\"). "
-            "The engine will automatically evaluate and resolve these expressions using JSONPath syntax before step execution."
+            "To reference and transform values from the source context data in the payload, write JSONPath expressions "
+            "directly after the variable name starting with $ (e.g., \"$var_name.products[?(@.price > 500)].name\", \"$var_name.regions[*].warehouse_matrix.*\", "
+            "\"$var_name.items[0]\"). "
+            "The engine will automatically evaluate and resolve these expressions using JSONPath syntax before final execution."
         )

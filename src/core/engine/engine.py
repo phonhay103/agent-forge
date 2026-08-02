@@ -4,10 +4,8 @@ from typing import Any, List, Dict, Union, Optional
 from pydantic import BaseModel, Field
 
 from src.core.planner.planner import Plan, PlanStep
-from src.core.binding import BaseBindingEngine, get_binding_engine
-from src.core.binding.llm_fallback import LLMFallbackMapper
+from json_schema_binder import BaseBindingEngine, get_binding_engine, LLMFallbackMapper, VariableParser
 from src.core.engine.protocols import MCPSessionProtocol
-from src.core.engine.parser import VariableParser
 
 logger = logging.getLogger("headless_core")
 
@@ -41,6 +39,9 @@ class HeadlessExecutor:
         self.enable_llm_fallback = enable_llm_fallback
         self.step_schemas_store = {}
         if self.enable_llm_fallback:
+            if model is None:
+                from src.core.llm_client import get_llm_client
+                model = get_llm_client()
             self.fallback_mapper = LLMFallbackMapper(model=model)
             logger.info("HeadlessExecutor initialized with automatic LLM Fallback mapping.")
         else:
@@ -62,7 +63,7 @@ class HeadlessExecutor:
         resolved = self.binding_engine.resolve(
             val,
             context_store,
-            target_tool_input_schema=target_tool_input_schema,
+            target_schema=target_tool_input_schema,
             step_schemas_store=step_schemas_store,
         )
 
@@ -71,10 +72,10 @@ class HeadlessExecutor:
                 "Deterministic binding left unresolved references in arguments. "
                 "Triggering LLM Fallback Mapper..."
             )
-            resolved = self.fallback_mapper.repair_arguments(
+            resolved = self.fallback_mapper.repair_payload(
                 context_store=context_store,
-                target_tool_input_schema=target_tool_input_schema,
-                partially_resolved_args=resolved,
+                target_schema=target_tool_input_schema,
+                partially_resolved_payload=resolved,
                 directive=directive
             )
             logger.info("LLM Fallback Mapper repair complete.")
@@ -106,7 +107,7 @@ class HeadlessExecutor:
             BINDING_FAILED_TOKEN = "__BINDING_FAILED_TOKEN_8f9a2b__"
             
             def replace_unresolved(v: Any) -> Any:
-                if VariableParser.is_step_reference(v):
+                if VariableParser.is_variable_reference(v):
                     return BINDING_FAILED_TOKEN
                 if isinstance(v, dict):
                     return {k: replace_unresolved(val) for k, val in v.items()}

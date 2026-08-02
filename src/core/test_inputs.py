@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List
 
 class TestCase(BaseModel):
+    __test__ = False
     id: str = Field(description="Unique identifier for the test case")
     name: str = Field(description="Short title or scenario name")
     category: str = Field(description="Category of complexity: basic, intermediate, complex")
@@ -9,6 +10,7 @@ class TestCase(BaseModel):
     query: str = Field(description="The natural language prompt/task input for the Planner")
 
 class TestSuite(BaseModel):
+    __test__ = False
     suite_name: str = "MCP Core Planner & Engine Test Suite"
     test_cases: List[TestCase]
 

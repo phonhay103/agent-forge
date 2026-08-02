@@ -4,6 +4,8 @@ import json
 import logging
 import sys
 import os
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
 
 from mcp import ClientSession
 from src.mcp.schema.models import (

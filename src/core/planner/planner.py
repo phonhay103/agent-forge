@@ -1,5 +1,5 @@
 from typing import List, Any, Union, Optional
-from src.core.binding import BaseBindingEngine, get_binding_engine
+from json_schema_binder import BaseBindingEngine, get_binding_engine
 from pydantic import BaseModel, Field
 import json
 

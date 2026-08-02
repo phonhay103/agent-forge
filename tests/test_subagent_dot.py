@@ -1,4 +1,4 @@
-from src.core.binding.dot_engine import DotNotationBindingEngine
+from json_schema_binder import DotNotationBindingEngine
 from pydantic import BaseModel
 import sys
 

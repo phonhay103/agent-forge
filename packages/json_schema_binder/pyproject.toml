@@ -1,0 +1,20 @@
+[project]
+name = "json-schema-binder"
+version = "0.1.0"
+description = "Deterministic and schema-aware variable binding engine for JSON and Pydantic payloads"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.0.0",
+    "jmespath>=1.0.0",
+    "jsonpath-ng>=1.6.0",
+]
+
+[project.optional-dependencies]
+llm = [
+    "langchain-core>=0.3.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

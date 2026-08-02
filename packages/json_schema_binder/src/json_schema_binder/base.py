@@ -9,7 +9,6 @@ class BindingType(str, Enum):
     DOT_NOTATION = "dot_notation"
 
 
-
 _BINDING_ENGINES_REGISTRY: Dict[str, Any] = {}
 
 
@@ -33,12 +32,13 @@ class BaseBindingEngine(ABC):
         self,
         val: Any,
         context_store: Dict[str, Any],
-        target_tool_input_schema: Optional[Dict[str, Any]] = None,
-        step_schemas_store: Optional[Dict[str, Dict[str, Any]]] = None,
+        target_schema: Optional[Dict[str, Any]] = None,
+        metadata_store: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> Any:
         """
-        Resolves variable references in tool arguments using context_store
-        and optional tool input/output schemas.
+        Resolves variable references in a payload using context_store
+        and optional schemas or metadata.
         """
         pass
 
