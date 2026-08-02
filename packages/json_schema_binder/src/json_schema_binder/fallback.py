@@ -1,8 +1,12 @@
 import json
+import logging
 from typing import Any, Dict, Optional, Union, Type, Callable
 from pydantic import BaseModel
 
 from json_schema_binder.models import BindingContext
+from json_schema_binder.parser import VariableParser
+
+logger = logging.getLogger("json_schema_binder.fallback")
 
 DEFAULT_FALLBACK_PROMPT = """You are a Schema-Conforming Data Mapper.
 Your task is to resolve and map unresolved variable references in the input payload using the provided source context data.
@@ -49,6 +53,12 @@ class LLMFallbackMapper:
         Generic method to resolve and repair a payload to match a target schema.
         Accepts BindingContext or raw dict context store.
         """
+        unresolved = VariableParser.extract_unresolved_references(partially_resolved_payload)
+        logger.warning(
+            f"⚠️ [LLM FALLBACK TRIGGERED] Deterministic binding failed for unresolved references: {unresolved}. "
+            f"Invoking LLM Fallback Mapper (Directive: '{directive or 'N/A'}')..."
+        )
+
         if not target_schema:
             raise ValueError("target_schema is required for structured LLM fallback.")
 
@@ -130,7 +140,7 @@ class LLMFallbackMapper:
             "directive": directive or "N/A"
         })
 
-        if isinstance(result, BaseModel):
-            return result.model_dump()
-        return result
+        out = result.model_dump() if isinstance(result, BaseModel) else result
+        logger.info(f"✅ [LLM FALLBACK REPAIRED] Payload successfully repaired by LLM: {out}")
+        return out
 

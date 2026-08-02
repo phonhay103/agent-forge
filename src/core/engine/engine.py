@@ -49,14 +49,19 @@ class HeadlessExecutor:
             self.binding_engine = binding_engine
         
         self.enable_llm_fallback = enable_llm_fallback
-        self.model = model
         self.binding_failed_token = binding_failed_token or DEFAULT_BINDING_FAILED_TOKEN
-        self.fallback_mapper = LLMFallbackMapper(model=self.model) if self.enable_llm_fallback else None
         self.step_schemas_store: Dict[str, Any] = {}
         
         if self.enable_llm_fallback:
+            if model is None:
+                from src.core.llm_client import get_llm_client
+                model = get_llm_client()
+            self.model = model
+            self.fallback_mapper = LLMFallbackMapper(model=self.model)
             logger.info("HeadlessExecutor initialized with automatic LLM Fallback mapping.")
         else:
+            self.model = model
+            self.fallback_mapper = None
             logger.info("HeadlessExecutor initialized with strict deterministic variable binding.")
 
     def _resolve_variables(
@@ -70,9 +75,24 @@ class HeadlessExecutor:
     ) -> Any:
         context = BindingContext.from_dict(store)
         if step_schemas_store:
-            context.step_schemas.update(step_schemas_store)
+            context.metadata.update(step_schemas_store)
 
         fallback = self.fallback_mapper if enable_llm_fallback else None
+
+        if enable_llm_fallback and fallback:
+            from json_schema_binder import TemplateResolver, VariableParser
+            resolver = TemplateResolver(engine=self.binding_engine)
+            partially_resolved = resolver.resolve_payload(args, context)
+            if VariableParser.has_unresolved_references(partially_resolved):
+                unresolved = VariableParser.extract_unresolved_references(partially_resolved)
+                msg = (
+                    f"⚠️ [LLM FALLBACK TRIGGERED]\n"
+                    f"   Primary engine '{self.binding_engine.binding_type.value}' failed for references: {unresolved}\n"
+                    f"   Directive: {directive or 'N/A'}\n"
+                    f"   Invoking LLM Fallback Mapper to repair payload..."
+                )
+                logger.warning(msg)
+                print(f"\n{msg}\n", flush=True)
 
         return resolve_variables(
             payload=args,
@@ -87,9 +107,9 @@ class HeadlessExecutor:
         ctx = ExecutionContext()
         logger.info(f"Starting execution of plan containing {len(plan.steps)} steps.")
         
-        # Fetch tool definitions exactly once to avoid repetitive list_tools network calls
-        tools_list = await self.session.list_tools()
-        tools_map = {t.name: t for t in tools_list.tools}
+        tools_res = await self.session.list_tools()
+        tools_list = tools_res.tools if hasattr(tools_res, "tools") else tools_res
+        tools_map = {t.name: t for t in tools_list}
 
         for step in plan.steps:
             logger.info(f"Executing step '{step.id}' using tool '{step.tool_name}'...")
