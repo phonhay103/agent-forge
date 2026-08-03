@@ -27,7 +27,7 @@ class AbstractPlanner:
     ) -> AbstractPlan:
         prompt = PromptComposer.from_file("abstract_planner_prompt.yaml", PROMPTS_DIR)
         capabilities = self._summarize_capabilities(available_tools_metadata)
-        prompt.set_slot("available_capabilities", capabilities)
+        prompt.set_variable("available_capabilities", capabilities)
         prompt_text = prompt.render()
 
         plan_obj: AbstractPlan = run_structured_llm(

@@ -26,7 +26,7 @@ class DynamicPlanner:
         available_tools_metadata: List[Any],
     ) -> DynamicPlan:
         prompt = PromptComposer.from_file("dynamic_planner_prompt.yaml", PROMPTS_DIR)
-        prompt.set_slot("available_tools", json.dumps(available_tools_metadata, indent=2))
+        prompt.set_variable("available_tools", json.dumps(available_tools_metadata, indent=2))
         prompt_text = prompt.render()
 
         plan_obj: DynamicPlan = run_structured_llm(
