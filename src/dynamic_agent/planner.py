@@ -16,16 +16,17 @@ class DynamicPlanner:
     but does NOT write variable binding expressions.
     """
 
-    def __init__(self, model: Optional[Any] = None, model_name: str = "gemini-2.5-flash"):
+    def __init__(self, model: Optional[Any] = None, model_name: str = "gemini-2.5-flash", prompt: Optional[PromptComposer] = None):
         self.model = model
         self.model_name = model_name
+        self.prompt = prompt
 
     def create_plan(
         self,
         user_query: str,
         available_tools_metadata: List[Any],
     ) -> DynamicPlan:
-        prompt = PromptComposer.from_file("dynamic_planner_prompt.yaml", PROMPTS_DIR)
+        prompt = self.prompt or PromptComposer.from_file("dynamic_planner_prompt.yaml", PROMPTS_DIR)
         prompt.set_variable("available_tools", json.dumps(available_tools_metadata, indent=2))
         prompt_text = prompt.render()
 

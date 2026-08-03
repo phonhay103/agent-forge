@@ -26,6 +26,7 @@ class DynamicExecutor:
         session: MCPSessionProtocol,
         model: Optional[Any] = None,
         model_name: str = "gemini-2.5-flash",
+        prompt: Optional[PromptComposer] = None,
     ):
         self.session = session
         self.model_name = model_name
@@ -33,6 +34,7 @@ class DynamicExecutor:
             from src.shared.llm_client import get_llm_client
             model = get_llm_client(model_name)
         self.model = model
+        self.prompt = prompt
 
     async def run_plan(self, plan: DynamicPlan) -> ExecutionContext:
         ctx = ExecutionContext()
@@ -93,7 +95,7 @@ class DynamicExecutor:
         dependency_context: dict,
     ) -> dict:
         """Use LLM to generate tool arguments by matching schemas."""
-        prompt = PromptComposer.from_file("dynamic_bind_prompt.yaml", PROMPTS_DIR)
+        prompt = self.prompt or PromptComposer.from_file("dynamic_bind_prompt.yaml", PROMPTS_DIR)
         prompt.set_variables({
             "tool_name": tool_name,
             "target_schema": json.dumps(input_schema, indent=2),

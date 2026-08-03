@@ -75,3 +75,21 @@ async def test_e2e_planner_jsonpath():
     if not os.getenv("GOOGLE_API_KEY"):
         pytest.skip("GOOGLE_API_KEY is not set.")
     await run_e2e_test("T2", "Search for Acme Corp org structure and process the organization data.", "jsonpath", False)
+
+
+def test_static_agent_injection():
+    from prompt_composer import PromptComposer
+    from json_schema_binder.fallback import LLMFallbackMapper
+    from unittest.mock import AsyncMock, MagicMock
+    
+    custom_prompt = PromptComposer().set_section("test_sec", "custom template text")
+    planner = Planner(prompt=custom_prompt)
+    assert planner.prompt == custom_prompt
+    
+    mock_fallback_mapper = LLMFallbackMapper(model=MagicMock())
+    executor = HeadlessExecutor(
+        session=AsyncMock(),
+        enable_llm_fallback=True,
+        fallback_mapper=mock_fallback_mapper
+    )
+    assert executor.fallback_mapper == mock_fallback_mapper

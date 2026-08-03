@@ -35,6 +35,8 @@ class AbstractExecutor:
         session: MCPSessionProtocol,
         model: Optional[Any] = None,
         model_name: str = "gemini-2.5-flash",
+        tool_resolver_prompt: Optional[PromptComposer] = None,
+        bind_prompt: Optional[PromptComposer] = None,
     ):
         self.session = session
         self.model_name = model_name
@@ -42,6 +44,8 @@ class AbstractExecutor:
             from src.shared.llm_client import get_llm_client
             model = get_llm_client(model_name)
         self.model = model
+        self.tool_resolver_prompt = tool_resolver_prompt
+        self.bind_prompt = bind_prompt
 
     async def run_plan(self, plan: AbstractPlan) -> ExecutionContext:
         ctx = ExecutionContext()
@@ -131,7 +135,7 @@ class AbstractExecutor:
         available_tools: List[dict],
     ) -> ToolSelection:
         """Use LLM to match intent to the best available tool."""
-        prompt = PromptComposer.from_file("tool_resolver_prompt.yaml", PROMPTS_DIR)
+        prompt = self.tool_resolver_prompt or PromptComposer.from_file("tool_resolver_prompt.yaml", PROMPTS_DIR)
         prompt.set_variables({
             "intent": intent,
             "expected_input": expected_input or "N/A",
@@ -158,7 +162,7 @@ class AbstractExecutor:
         dependency_context: dict,
     ) -> dict:
         """Use LLM to generate tool arguments."""
-        prompt = PromptComposer.from_file("abstract_bind_prompt.yaml", PROMPTS_DIR)
+        prompt = self.bind_prompt or PromptComposer.from_file("abstract_bind_prompt.yaml", PROMPTS_DIR)
         prompt.set_variables({
             "tool_name": tool_name,
             "target_schema": json.dumps(input_schema, indent=2),

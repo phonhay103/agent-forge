@@ -16,11 +16,13 @@ class Planner:
         self,
         model: Optional[Any] = None,
         model_name: str = "gemini-2.5-flash",
-        binding_failed_token: Optional[str] = None
+        binding_failed_token: Optional[str] = None,
+        prompt: Optional[PromptComposer] = None
     ):
         self.model = model
         self.model_name = model_name
         self.binding_failed_token = binding_failed_token or DEFAULT_BINDING_FAILED_TOKEN
+        self.prompt = prompt
 
     def create_plan(
         self,
@@ -44,7 +46,7 @@ class Planner:
 
         from src.shared.llm_client import run_structured_llm
         
-        prompt = PromptComposer.from_file("planner_prompt.yaml", PROMPTS_DIR)
+        prompt = self.prompt or PromptComposer.from_file("planner_prompt.yaml", PROMPTS_DIR)
         prompt.set_variable("available_tools", json.dumps(available_tools_metadata, indent=2))
         prompt.set_variable("binding_instruction", binding_instruction)
         prompt.set_variable("binding_failed_token", self.binding_failed_token)

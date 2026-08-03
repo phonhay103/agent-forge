@@ -46,6 +46,8 @@ def _rename_task_references(args: Any, id_map: Dict[str, str]) -> Any:
 
 DEFAULT_BINDING_FAILED_TOKEN = os.getenv("BINDING_FAILED_TOKEN", "__BINDING_FAILED__")
 
+from json_schema_binder.protocols import FallbackResolverProtocol
+
 class StaticExecutor:
     def __init__(
         self,
@@ -53,7 +55,8 @@ class StaticExecutor:
         binding_engine: Union[str, BaseBindingEngine] = "jmespath",
         enable_llm_fallback: bool = False,
         model: Optional[Any] = None,
-        binding_failed_token: Optional[str] = None
+        binding_failed_token: Optional[str] = None,
+        fallback_mapper: Optional[FallbackResolverProtocol] = None
     ):
         self.session = session
         if isinstance(binding_engine, str):
@@ -66,10 +69,14 @@ class StaticExecutor:
         self.task_schemas_store: Dict[str, Any] = {}
         
         if self.enable_llm_fallback:
-            if model is None:
-                model = get_llm_client()
-            self.model = model
-            self.fallback_mapper = LLMFallbackMapper(model=self.model)
+            if fallback_mapper is not None:
+                self.fallback_mapper = fallback_mapper
+                self.model = model
+            else:
+                if model is None:
+                    model = get_llm_client()
+                self.model = model
+                self.fallback_mapper = LLMFallbackMapper(model=self.model)
             logger.info("StaticExecutor initialized with automatic LLM Fallback mapping.")
         else:
             self.model = model

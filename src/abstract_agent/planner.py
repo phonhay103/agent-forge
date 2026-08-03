@@ -16,16 +16,17 @@ class AbstractPlanner:
     Does NOT select specific tools — runtime handles that.
     """
 
-    def __init__(self, model: Optional[Any] = None, model_name: str = "gemini-2.5-flash"):
+    def __init__(self, model: Optional[Any] = None, model_name: str = "gemini-2.5-flash", prompt: Optional[PromptComposer] = None):
         self.model = model
         self.model_name = model_name
+        self.prompt = prompt
 
     def create_plan(
         self,
         user_query: str,
         available_tools_metadata: List[Any],
     ) -> AbstractPlan:
-        prompt = PromptComposer.from_file("abstract_planner_prompt.yaml", PROMPTS_DIR)
+        prompt = self.prompt or PromptComposer.from_file("abstract_planner_prompt.yaml", PROMPTS_DIR)
         capabilities = self._summarize_capabilities(available_tools_metadata)
         prompt.set_variable("available_capabilities", capabilities)
         prompt_text = prompt.render()

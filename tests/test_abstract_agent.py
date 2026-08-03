@@ -84,3 +84,20 @@ async def test_abstract_executor():
             )
             mock_resolve.assert_called_once()
             mock_bind.assert_called_once()
+
+
+def test_abstract_agent_prompt_injection():
+    from prompt_composer import PromptComposer
+    custom_prompt = PromptComposer().set_section("test_sec", "custom template text")
+    
+    planner = AbstractPlanner(prompt=custom_prompt)
+    assert planner.prompt == custom_prompt
+    
+    executor = AbstractExecutor(
+        AsyncMock(),
+        tool_resolver_prompt=custom_prompt,
+        bind_prompt=custom_prompt
+    )
+    assert executor.tool_resolver_prompt == custom_prompt
+    assert executor.bind_prompt == custom_prompt
+
