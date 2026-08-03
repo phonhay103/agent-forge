@@ -2,11 +2,11 @@ import re
 from typing import List, Any, Optional, Dict, Union
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
-class PlanStep(BaseModel):
-    id: str = Field(description="Unique identifier for the step, e.g., step_1")
+class PlanTask(BaseModel):
+    id: str = Field(description="Unique identifier for the task, e.g., 'search_products'")
     tool_name: str = Field(description="Name of the MCP tool to execute")
     args: Dict[str, Union[str, int, float, bool, List[Any], Dict[str, Any]]] = Field(
-        description="Direct tool arguments matching the expected parameters, where each value is either a literal primitive (string/number/bool), a nested object/array, or a variable binding string starting with '$' (e.g., '$step_1.items')"
+        description="Direct tool arguments matching the expected parameters, where each value is either a literal primitive (string/number/bool), a nested object/array, or a variable binding string starting with '$' (e.g., '$task_search_products.items')"
     )
     directive: Optional[str] = Field(
         default=None,
@@ -41,8 +41,10 @@ class PlanStep(BaseModel):
         _check_value(v)
         return v
 
+PlanStep = PlanTask
+
 class Plan(BaseModel):
-    steps: List[PlanStep] = Field(description="Ordered list of steps to execute sequentially")
+    tasks: List[PlanTask] = Field(description="Ordered list of tasks to execute sequentially")
     reason: Optional[str] = Field(
         default=None,
         description="Overall explanation of the plan strategy, routing path, and tool choices"

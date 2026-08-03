@@ -1,18 +1,6 @@
 import os
-import pathlib
 import functools
 from typing import Any, Optional
-
-@functools.lru_cache(maxsize=32)
-def load_prompt_template(name: str) -> str:
-    """
-    Loads prompt templates from the centralized prompts directory.
-    Ensures safe path resolution from any execution directory.
-    """
-    base_dir = pathlib.Path(__file__).parent
-    prompt_path = base_dir / "prompts" / name
-    with open(prompt_path, "r", encoding="utf-8") as f:
-        return f.read()
 
 @functools.lru_cache(maxsize=16)
 def get_llm_client(model_name: str = "gemini-2.5-flash", temperature: float = 0.0) -> Any:
@@ -92,7 +80,7 @@ def get_structured_llm_client(
 
 
 def run_structured_llm(
-    prompt_name: str,
+    prompt_text: str,
     prompt_variables: dict,
     schema: Any,
     model_name: str = "gemini-2.5-flash",
@@ -101,19 +89,20 @@ def run_structured_llm(
 ) -> Any:
     """
     Centralized execution of structured LLM chains.
-    Loads the prompt, binds the structured schema, creates and runs the chain pipeline.
+    Binds the structured schema, creates and runs the chain pipeline.
     """
-    from langchain_core.prompts import ChatPromptTemplate
+    from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+    from langchain_core.messages import SystemMessage
 
-    # Load prompt text and create native ChatPromptTemplate with System & Human message roles
-    prompt_text = load_prompt_template(prompt_name)
     if "user_query" in prompt_variables:
-        prompt_template = ChatPromptTemplate.from_messages([
-            ("system", prompt_text),
-            ("human", "{user_query}")
+        prompt_template = ChatPromptTemplate([
+            SystemMessage(content=prompt_text),
+            HumanMessagePromptTemplate.from_template("{user_query}")
         ])
     else:
-        prompt_template = ChatPromptTemplate.from_template(prompt_text)
+        prompt_template = ChatPromptTemplate([
+            SystemMessage(content=prompt_text)
+        ])
 
     # Resolve structured model client
     structured_llm = get_structured_llm_client(

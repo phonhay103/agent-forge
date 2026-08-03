@@ -1,4 +1,5 @@
-from src.core.engine.engine import HeadlessExecutor, ExecutionContext
+from src.static_agent.executor import StaticExecutor as HeadlessExecutor
+from src.shared.executor_models import ExecutionContext
 from src.mcp.schema.models import (
     SupplyChainOutput, RegionSummary, BlockSummary,
     OrgStructureOutput, DivisionSummary, ProjectSummary
@@ -12,7 +13,7 @@ class DummyClientSession:
 def test_engine_jmespath_filter_expression():
     executor = HeadlessExecutor(session=DummyClientSession())
     context_store = {
-        "step_1": {
+        "task_1": {
             "products": [
                 {"name": "iPhone 15 Pro", "price": 999, "rating": 4.8},
                 {"name": "iPhone 15", "price": 799, "rating": 4.6},
@@ -22,7 +23,7 @@ def test_engine_jmespath_filter_expression():
     }
 
     # Reference using advanced JMESPath filter expression directly
-    val_expr = "$step_1.products[?price > `800` && rating >= `4.8`].name"
+    val_expr = "$task_1.products[?price > `800` && rating >= `4.8`].name"
     resolved = executor._resolve_variables(val_expr, context_store)
 
     assert resolved == ["iPhone 15 Pro", "MacBook Pro"]
@@ -52,14 +53,14 @@ def test_engine_jmespath_5_level_matrix_flattening():
         ]
     )
 
-    context_store = {"step_1": supply_output}
+    context_store = {"task_1": supply_output}
 
     # Extract block summaries from nested model using built-in engine JMESPath resolution
-    ref1 = "$step_1.region_summaries[*].block_summaries[] | [?total_value > `2500`].block_id"
+    ref1 = "$task_1.region_summaries[*].block_summaries[] | [?total_value > `2500`].block_id"
     resolved1 = executor._resolve_variables(ref1, context_store)
     assert resolved1 == ["BLK-1"]
 
-    ref2 = "$step_1.low_stock_skus[0]"
+    ref2 = "$task_1.low_stock_skus[0]"
     resolved2 = executor._resolve_variables(ref2, context_store)
     assert resolved2 == "SKU-01"
 
@@ -96,10 +97,10 @@ def test_engine_jmespath_max_by_function():
         ]
     )
 
-    context_store = {"step_1": org_output}
+    context_store = {"task_1": org_output}
 
     # Built-in JMESPath resolution using max_by function without requiring a tool
-    ref = "$step_1.division_summaries | max_by(@, &total_budget).division_name"
+    ref = "$task_1.division_summaries | max_by(@, &total_budget).division_name"
     resolved = executor._resolve_variables(ref, context_store)
     assert resolved == "R&D"
 
@@ -107,15 +108,15 @@ def test_engine_jmespath_max_by_function():
 def test_engine_nested_dict_argument_resolution():
     executor = HeadlessExecutor(session=DummyClientSession())
     context_store = {
-        "step_1": {
+        "task_1": {
             "tags": ["python", "ai", "mcp"],
             "scores": [88, 92, 95]
         }
     }
 
     tool_args = {
-        "tag_string": "$step_1.tags | join(', ', @)",
-        "max_score": "$step_1.scores | max_by(@, &@)",
+        "tag_string": "$task_1.tags | join(', ', @)",
+        "max_score": "$task_1.scores | max_by(@, &@)",
         "static_param": "hello"
     }
 

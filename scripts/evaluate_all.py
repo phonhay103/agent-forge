@@ -12,11 +12,13 @@ from dotenv import load_dotenv
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
-from src.core.planner.planner import Planner, Plan
-from src.core.engine.engine import HeadlessExecutor, ExecutionContext
-from src.core.engine.protocols import MCPClient
-from src.core.test_inputs import TEST_SUITE, TestCase
-from src.core.main import MCP_SERVER_URL
+from src.static_agent.planner import Planner
+from src.static_agent.models import Plan
+from src.static_agent.executor import StaticExecutor as HeadlessExecutor
+from src.shared.executor_models import ExecutionContext
+from src.shared.mcp_protocols import MCPClient
+from src.shared.test_inputs import TEST_SUITE, TestCase
+from src.static_agent.main import MCP_SERVER_URL
 
 load_dotenv()
 

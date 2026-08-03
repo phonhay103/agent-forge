@@ -2,12 +2,14 @@ from typing import List, Any, Union, Optional
 from json_schema_binder import BaseBindingEngine, get_binding_engine
 from pydantic import BaseModel, Field
 import json
-
-from src.core.planner.models import PlanStep, Plan
-
+import pathlib
 import os
 
+from src.static_agent.models import PlanTask, Plan
+from prompt_composer import PromptComposer
+
 DEFAULT_BINDING_FAILED_TOKEN = os.getenv("BINDING_FAILED_TOKEN", "__BINDING_FAILED__")
+PROMPTS_DIR = pathlib.Path(__file__).parent / "prompts"
 
 class Planner:
     def __init__(
@@ -35,19 +37,24 @@ class Planner:
         if enable_llm_fallback:
             fallback_instruction = (
                 "\nLLM FALLBACK MODE IS ENABLED.\n"
-                "For steps referencing previous step outputs, generate a 'directive' field in each PlanStep object "
+                "For tasks referencing previous task outputs, generate a 'directive' field in each PlanTask object "
                 "providing a Natural Language Data Mapping Directive (e.g. 'Extract total_inventory_value and set as amount') "
                 "to guide runtime recovery if primary variable binding fails."
             )
 
-        from src.core.llm_client import run_structured_llm
+        from src.shared.llm_client import run_structured_llm
+        
+        prompt = PromptComposer.from_file("planner_prompt.md", PROMPTS_DIR)
+        prompt.set_slot("available_tools", json.dumps(available_tools_metadata, indent=2))
+        prompt.set_slot("binding_instruction", binding_instruction)
+        prompt.set_slot("binding_failed_token", self.binding_failed_token)
+        prompt.set_slot("fallback_instruction", fallback_instruction)
+        
+        prompt_text = prompt.render()
+
         plan_obj: Plan = run_structured_llm(
-            prompt_name="planner_prompt.md",
+            prompt_text=prompt_text,
             prompt_variables={
-                "available_tools": json.dumps(available_tools_metadata, indent=2),
-                "binding_instruction": binding_instruction,
-                "fallback_instruction": fallback_instruction,
-                "binding_failed_token": self.binding_failed_token,
                 "user_query": user_query
             },
             schema=Plan,

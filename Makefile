@@ -17,11 +17,20 @@ install: ## Install dependencies using uv sync
 server: ## Run the standalone MCP Streamable HTTP server (http://127.0.0.1:8000/mcp)
 	uv run python -m src.mcp.server
 
-agent: ## Run the interactive LLM Planner & Execution Agent
-	uv run python -m src.core.main
+agent: ## Run the interactive Multi-Agent System
+	uv run python -m src.main
+
+agent-static: ## Run Static Binding Agent directly
+	uv run python -m src.static_agent
+
+agent-dynamic: ## Run Dynamic Binding Agent directly
+	uv run python -m src.dynamic_agent
+
+agent-abstract: ## Run Abstract Planning Agent directly
+	uv run python -m src.abstract_agent
 
 test: ## Run unit tests with pytest
-	uv run pytest
+	PYTHONPATH=. uv run python -m pytest tests/
 
 eval: ## Run evaluation suite with default engine (jmespath)
 	uv run python scripts/evaluate_all.py

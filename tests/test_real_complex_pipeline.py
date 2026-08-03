@@ -12,10 +12,11 @@ from src.mcp.schema.models import (
     SupplyChainInput, NetworkMetadata, RegionNode, WarehouseBlock,
     ManagerInfo, ContactDetail, AisleStorage, ItemBatch, ItemSpec
 )
-from src.core.planner.models import Plan, PlanStep
-from src.core.engine.engine import HeadlessExecutor, ExecutionContext
-from src.core.engine.protocols import MCPClient
-from src.core.main import MCP_SERVER_URL
+from src.static_agent.models import Plan, PlanTask as PlanStep
+from src.static_agent.executor import StaticExecutor as HeadlessExecutor
+from src.shared.executor_models import ExecutionContext
+from src.shared.mcp_protocols import MCPClient
+from src.static_agent.main import MCP_SERVER_URL
 
 # Configure logging to see the optimized execution steps and lru_caches in action
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -73,7 +74,10 @@ def make_complex_supply_chain_input() -> dict:
     )
     return input_obj.model_dump()
 
-async def run_complex_pipeline():
+import pytest
+
+@pytest.mark.anyio
+async def test_complex_pipeline():
     logger.info(f"Connecting to live MCP server at {MCP_SERVER_URL} over Streamable HTTP...")
     from mcp.client.streamable_http import streamablehttp_client
     
@@ -88,17 +92,17 @@ async def run_complex_pipeline():
             configs = [
                 {
                     "engine": "jmespath",
-                    "expression": ["$step_1.region_summaries[*].block_summaries[] | max_by(@, &total_value).total_value"],
+                    "expression": ["$task_1.region_summaries[*].block_summaries[] | max_by(@, &total_value).total_value"],
                     "name": "JMESPATH EXCLUSIVE (Built-in max_by & Multi-field Projection)"
                 },
                 {
                     "engine": "jsonpath",
-                    "expression": "$step_1.region_summaries[*].block_summaries[*].total_value",
+                    "expression": "$task_1.region_summaries[*].block_summaries[*].total_value",
                     "name": "JSONPath Standard Wildcard Selection"
                 },
                 {
                     "engine": "dot_notation",
-                    "expression": ["$step_1.region_summaries.0.block_summaries.0.total_value"],
+                    "expression": ["$task_1.region_summaries.0.block_summaries.0.total_value"],
                     "name": "Dot Notation Direct Index Access"
                 }
             ]
@@ -112,14 +116,14 @@ async def run_complex_pipeline():
                 logger.info("==================================================")
 
                 complex_plan = Plan(
-                    steps=[
+                    tasks=[
                         PlanStep(
-                            id="step_1",
+                            id="task_1",
                             tool_name="analyze_supply_chain",
                             args=make_complex_supply_chain_input()
                         ),
                         PlanStep(
-                            id="step_2",
+                            id="task_2",
                             tool_name="calculate",
                             args={
                                 "prices": expr
@@ -141,7 +145,7 @@ async def run_complex_pipeline():
 
                 # Verification and Assertions
                 # Step 1 Output verification
-                step_1_res = execution_context.store["step_1"]
+                step_1_res = execution_context.store["task_1"]
                 assert step_1_res["network_name"] == "Global Enterprise Tech Logistics"
                 assert len(step_1_res["region_summaries"]) == 1
                 
@@ -150,7 +154,7 @@ async def run_complex_pipeline():
                 assert block_summary["total_value"] == 7000.0
 
                 # Step 2 Output verification
-                step_2_res = execution_context.store["step_2"]
+                step_2_res = execution_context.store["task_2"]
                 assert step_2_res["total_value"] == 7000.0
                 assert step_2_res["count"] == 1
 

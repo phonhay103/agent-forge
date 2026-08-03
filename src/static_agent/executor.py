@@ -3,7 +3,7 @@ import logging
 from typing import Any, List, Dict, Union, Optional
 from pydantic import BaseModel, Field
 
-from src.core.planner.planner import Plan, PlanStep
+from src.static_agent.models import Plan, PlanTask
 from json_schema_binder import (
     BaseBindingEngine,
     get_binding_engine,
@@ -12,28 +12,41 @@ from json_schema_binder import (
     resolve_variables,
     BindingContext,
 )
-from src.core.engine.protocols import MCPSessionProtocol
-
+from src.shared.mcp_protocols import MCPSessionProtocol
+from src.shared.executor_models import ExecutionContext
+from src.shared.llm_client import get_llm_client
 import os
+import re
 
 logger = logging.getLogger("headless_core")
 
+def _extract_task_references(args: Any) -> set:
+    refs = set()
+    if isinstance(args, str):
+        for match in re.findall(r'\$task_[a-zA-Z0-9_]+', args):
+            refs.add(match)
+    elif isinstance(args, dict):
+        for v in args.values():
+            refs.update(_extract_task_references(v))
+    elif isinstance(args, list):
+        for item in args:
+            refs.update(_extract_task_references(item))
+    return refs
+
+def _rename_task_references(args: Any, id_map: Dict[str, str]) -> Any:
+    if isinstance(args, str):
+        for old, new in id_map.items():
+            args = re.sub(r'\$' + re.escape(old) + r'\b', '$' + new, args)
+        return args
+    elif isinstance(args, dict):
+        return {k: _rename_task_references(v, id_map) for k, v in args.items()}
+    elif isinstance(args, list):
+        return [_rename_task_references(v, id_map) for v in args]
+    return args
+
 DEFAULT_BINDING_FAILED_TOKEN = os.getenv("BINDING_FAILED_TOKEN", "__BINDING_FAILED__")
 
-class StepResult(BaseModel):
-    step_id: str
-    tool_name: str
-    output: Any
-
-class ExecutionContext(BaseModel):
-    results: List[StepResult] = Field(default_factory=list)
-    store: Dict[str, Any] = Field(default_factory=dict)
-
-    def add_result(self, step_id: str, tool_name: str, output: Any):
-        self.results.append(StepResult(step_id=step_id, tool_name=tool_name, output=output))
-        self.store[step_id] = output
-
-class HeadlessExecutor:
+class StaticExecutor:
     def __init__(
         self,
         session: MCPSessionProtocol,
@@ -50,32 +63,31 @@ class HeadlessExecutor:
         
         self.enable_llm_fallback = enable_llm_fallback
         self.binding_failed_token = binding_failed_token or DEFAULT_BINDING_FAILED_TOKEN
-        self.step_schemas_store: Dict[str, Any] = {}
+        self.task_schemas_store: Dict[str, Any] = {}
         
         if self.enable_llm_fallback:
             if model is None:
-                from src.core.llm_client import get_llm_client
                 model = get_llm_client()
             self.model = model
             self.fallback_mapper = LLMFallbackMapper(model=self.model)
-            logger.info("HeadlessExecutor initialized with automatic LLM Fallback mapping.")
+            logger.info("StaticExecutor initialized with automatic LLM Fallback mapping.")
         else:
             self.model = model
             self.fallback_mapper = None
-            logger.info("HeadlessExecutor initialized with strict deterministic variable binding.")
+            logger.info("StaticExecutor initialized with strict deterministic variable binding.")
 
     def _resolve_variables(
         self,
         args: Any,
         store: Dict[str, Any],
         target_tool_input_schema: Optional[Dict[str, Any]] = None,
-        step_schemas_store: Optional[Dict[str, Any]] = None,
+        task_schemas_store: Optional[Dict[str, Any]] = None,
         enable_llm_fallback: bool = False,
         directive: Optional[str] = None
     ) -> Any:
         context = BindingContext.from_dict(store)
-        if step_schemas_store:
-            context.metadata.update(step_schemas_store)
+        if task_schemas_store:
+            context.metadata.update(task_schemas_store)
 
         fallback = self.fallback_mapper if enable_llm_fallback else None
 
@@ -105,24 +117,46 @@ class HeadlessExecutor:
 
     async def run_plan(self, plan: Plan) -> ExecutionContext:
         ctx = ExecutionContext()
-        logger.info(f"Starting execution of plan containing {len(plan.steps)} steps.")
+        logger.info(f"Starting execution of plan containing {len(plan.tasks)} tasks.")
+
+        # Resolve any mismatched task reference names dynamically
+        actual_ids = [t.id for t in plan.tasks]
+        id_map = {}
+        for idx, task in enumerate(plan.tasks):
+            refs = _extract_task_references(task.args)
+            for ref in refs:
+                ref_name = ref.lstrip("$")
+                if ref_name not in actual_ids:
+                    # Look for the best candidate from previous tasks
+                    candidates = [aid for aid in actual_ids[:idx] if aid in ref_name or ref_name in aid]
+                    if not candidates:
+                        # Fallback: if only one task has executed before, map to it
+                        if idx == 1:
+                            candidates = [plan.tasks[0].id]
+                    if candidates:
+                        id_map[ref_name] = candidates[0]
+
+        if id_map:
+            logger.info(f"Fuzzy matching mismatched task references: {id_map}")
+            for task in plan.tasks:
+                task.args = _rename_task_references(task.args, id_map)
         
         tools_res = await self.session.list_tools()
         tools_list = tools_res.tools if hasattr(tools_res, "tools") else tools_res
         tools_map = {t.name: t for t in tools_list}
 
-        for step in plan.steps:
-            logger.info(f"Executing step '{step.id}' using tool '{step.tool_name}'...")
-            target_tool_metadata = tools_map.get(step.tool_name)
+        for task in plan.tasks:
+            logger.info(f"Executing task '{task.id}' using tool '{task.tool_name}'...")
+            target_tool_metadata = tools_map.get(task.tool_name)
             target_tool_input_schema = target_tool_metadata.input_schema if target_tool_metadata else {}
-            # Resolve references to previous step outputs with tool schema context
+            # Resolve references to previous task outputs with tool schema context
             resolved_args = self._resolve_variables(
-                step.args,
+                task.args,
                 ctx.store,
                 target_tool_input_schema=target_tool_input_schema,
-                step_schemas_store=self.step_schemas_store,
+                task_schemas_store=self.task_schemas_store,
                 enable_llm_fallback=self.enable_llm_fallback,
-                directive=getattr(step, "directive", None)
+                directive=getattr(task, "directive", None)
             )
             
             failed_token = self.binding_failed_token
@@ -147,7 +181,7 @@ class HeadlessExecutor:
             issue = find_unresolved_issue(resolved_args)
             if issue:
                 err_msg = (
-                    f"Execution Halted: Variable binding failed for step '{step.id}' "
+                    f"Execution Halted: Variable binding failed for task '{task.id}' "
                     f"using engine '{self.binding_engine.binding_type.value}'. "
                     f"Reason: {issue}."
                 )
@@ -166,10 +200,10 @@ class HeadlessExecutor:
                 if isinstance(call_args, dict) and "input" not in call_args:
                     call_args = {"input": call_args}
 
-            logger.debug(f"Resolved call arguments for tool '{step.tool_name}': {call_args}")
+            logger.debug(f"Resolved call arguments for tool '{task.tool_name}': {call_args}")
 
             result = await self.session.call_tool(
-                name=step.tool_name, 
+                name=task.tool_name, 
                 arguments=call_args
             )
             
@@ -179,12 +213,12 @@ class HeadlessExecutor:
             except Exception:
                 parsed_output = content
             
-            logger.info(f"Step [{step.id}] execution succeeded. Output stored in context.")
-            ctx.add_result(step.id, step.tool_name, parsed_output)
+            logger.info(f"Task [{task.id}] execution succeeded. Output stored in context.")
+            ctx.add_result(task.id, task.tool_name, parsed_output)
             
-            # Record source step tool schemas
-            self.step_schemas_store[step.id] = {
-                "tool_name": step.tool_name,
+            # Record source task tool schemas
+            self.task_schemas_store[task.id] = {
+                "tool_name": task.tool_name,
                 "input_schema": target_tool_input_schema,
                 "output_schema": target_tool_metadata.output_schema if target_tool_metadata else {}
             }

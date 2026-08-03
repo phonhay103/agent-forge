@@ -2,21 +2,19 @@ import json
 import re
 from typing import List, Dict, Any, Set
 
-
-def _extract_step_references(args: Any) -> Set[str]:
-    """Extract all $step_N references from args recursively."""
+def _extract_task_references(args: Any) -> Set[str]:
+    """Extract all $task_xxx references from args recursively."""
     refs = set()
     if isinstance(args, str):
-        for match in re.findall(r'\$step_\d+', args):
+        for match in re.findall(r'\$task_[a-zA-Z0-9_]+', args):
             refs.add(match)
     elif isinstance(args, dict):
         for v in args.values():
-            refs.update(_extract_step_references(v))
+            refs.update(_extract_task_references(v))
     elif isinstance(args, list):
         for item in args:
-            refs.update(_extract_step_references(item))
+            refs.update(_extract_task_references(item))
     return refs
-
 
 def _simplify_schema(schema: Dict[str, Any], max_depth: int = 2) -> Dict[str, Any]:
     """Simplify a JSON schema into a human-readable summary of key: type."""
@@ -43,13 +41,11 @@ def _simplify_schema(schema: Dict[str, Any], max_depth: int = 2) -> Dict[str, An
             result[key] = prop.get("title", prop_type)
     return result
 
-
 def _format_json_indented(data: Any, indent: int = 4) -> str:
     """Format data as indented JSON string with prefix padding."""
     prefix = " " * indent
     lines = json.dumps(data, indent=2, ensure_ascii=False).split("\n")
     return "\n".join(f"{prefix}{line}" for line in lines)
-
 
 def format_plan_display(
     plan: Any,
@@ -57,29 +53,17 @@ def format_plan_display(
     binding_type: str = "jmespath",
     enable_llm_fallback: bool = False,
 ) -> str:
-    """
-    Format a Plan into a human-readable display string with input/output info per step.
-
-    Args:
-        plan: A Plan object with .steps and optional .reason
-        tools_metadata: List of tool metadata dicts from MCP server (containing inputSchema/outputSchema)
-        binding_type: The active binding engine name
-        enable_llm_fallback: Whether LLM fallback is enabled
-
-    Returns:
-        Formatted string for terminal display
-    """
     tools_map: Dict[str, Dict[str, Any]] = {}
     for t in tools_metadata:
         name = t.get("name", "")
         tools_map[name] = t
 
-    total = len(plan.steps)
+    total = len(plan.tasks)
     lines: List[str] = []
 
     # Header
     lines.append("╔══════════════════════════════════════════════════════════════╗")
-    lines.append("║                    📋 EXECUTION PLAN                        ║")
+    lines.append("║                📋 STATIC EXECUTION PLAN                      ║")
     lines.append("╠══════════════════════════════════════════════════════════════╣")
     if plan.reason:
         reason_text = plan.reason
@@ -88,26 +72,26 @@ def format_plan_display(
         for line in wrapped:
             lines.append(f"║ {line:<60} ║")
     fallback_label = "ON" if enable_llm_fallback else "OFF"
-    lines.append(f"║ Total Steps: {total} │ Engine: {binding_type.upper():<10} │ Fallback: {fallback_label:<5}  ║")
+    lines.append(f"║ Total Tasks: {total} │ Engine: {binding_type.upper():<10} │ Fallback: {fallback_label:<5}  ║")
     lines.append("╚══════════════════════════════════════════════════════════════╝")
     lines.append("")
 
-    for idx, step in enumerate(plan.steps):
-        tool_meta = tools_map.get(step.tool_name, {})
+    for idx, task in enumerate(plan.tasks):
+        tool_meta = tools_map.get(task.tool_name, {})
         output_schema = tool_meta.get("outputSchema", tool_meta.get("output_schema", {}))
 
-        step_refs = _extract_step_references(step.args)
+        task_refs = _extract_task_references(task.args)
 
         # Step header
         lines.append("┌─────────────────────────────────────────────────────────────┐")
-        lines.append(f"│ Step {idx + 1}/{total}: {step.tool_name:<49} │")
-        if step.reason:
-            reason = step.reason[:57] + "..." if len(step.reason) > 57 else step.reason
+        lines.append(f"│ Task {idx + 1}/{total}: {task.tool_name:<49} │")
+        if task.reason:
+            reason = task.reason[:57] + "..." if len(task.reason) > 57 else task.reason
             lines.append(f"│ Reason: {reason:<52} │")
 
         # INPUT section
         lines.append("├──────────── INPUT ──────────────────────────────────────────┤")
-        input_str = _format_json_indented(step.args, indent=4)
+        input_str = _format_json_indented(task.args, indent=4)
         for line in input_str.split("\n"):
             lines.append(f"│ {line:<60}│")
 
@@ -124,14 +108,14 @@ def format_plan_display(
 
         # DATA FLOW section
         lines.append("├──────────── DATA FLOW ──────────────────────────────────────┤")
-        if step_refs:
-            deps = ", ".join(sorted(step_refs))
+        if task_refs:
+            deps = ", ".join(sorted(task_refs))
             lines.append(f"│    Depends on: {deps:<45}│")
         else:
             lines.append(f"│    Source: User Input (no dependencies){'':<21}│")
 
-        if step.directive:
-            directive = step.directive[:55] + "..." if len(step.directive) > 55 else step.directive
+        if task.directive:
+            directive = task.directive[:55] + "..." if len(task.directive) > 55 else task.directive
             lines.append(f"│    Directive: {directive:<46}│")
 
         lines.append("└─────────────────────────────────────────────────────────────┘")

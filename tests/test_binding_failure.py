@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
-from src.core.engine.engine import HeadlessExecutor
-from src.core.planner.models import Plan, PlanStep
+from src.static_agent.executor import StaticExecutor as HeadlessExecutor
+from src.static_agent.models import Plan, PlanTask as PlanStep
 
 @pytest.mark.anyio
 async def test_binding_failure_stops_execution():
@@ -17,17 +17,17 @@ async def test_binding_failure_stops_execution():
         enable_llm_fallback=False
     )
     
-    # Create a plan with an unresolved step reference
+    # Create a plan with an unresolved task reference
     plan = Plan(
-        steps=[
+        tasks=[
             PlanStep(
-                id="step_1",
+                id="task_1",
                 tool_name="some_tool",
-                args={"param": "$step_non_existent.results"}
+                args={"param": "$task_non_existent.results"}
             )
         ]
     )
     
     # Running the plan should raise a ValueError and stop execution immediately
-    with pytest.raises(ValueError, match="Execution Halted: Variable binding failed for step 'step_1'"):
+    with pytest.raises(ValueError, match="Execution Halted: Variable binding failed for task 'task_1'"):
         await executor.run_plan(plan)

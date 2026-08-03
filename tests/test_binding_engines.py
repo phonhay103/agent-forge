@@ -82,7 +82,7 @@ def test_llm_fallback_direct_mapping():
     if not os.getenv("GOOGLE_API_KEY"):
         print("Skipping LLM Fallback test because GOOGLE_API_KEY is not set.")
         return
-    from src.core.llm_client import get_llm_client
+    from src.shared.llm_client import get_llm_client
     mapper = LLMFallbackMapper(model=get_llm_client())
     context_data = {
         "total_inventory_value": 5000.0,
@@ -99,9 +99,9 @@ def test_llm_fallback_direct_mapping():
 
     # Test repair_payload fallback mapping
     mapped = mapper.repair_payload(
-        context_store={"step_1": context_data},
+        context_store={"task_1": context_data},
         target_schema=target_tool_input_schema,
-        partially_resolved_payload={"amount": "$step_1.non_existent_key", "from_currency": "USD"},
+        partially_resolved_payload={"amount": "$task_1.non_existent_key", "from_currency": "USD"},
         directive="Extract total_inventory_value and map to amount"
     )
     assert mapped is not None
@@ -115,7 +115,7 @@ def test_jmespath_automatic_llm_fallback():
         return
     engine = JMESPathBindingEngine()
     context = {
-        "step_1": {
+        "task_1": {
             "total_inventory_value": 5000.0,
             "low_stock_skus": ["SKU-100"]
         }
@@ -129,14 +129,14 @@ def test_jmespath_automatic_llm_fallback():
         }
     }
 
-    from src.core.engine.engine import HeadlessExecutor
+    from src.static_agent.executor import StaticExecutor
     
-    executor = HeadlessExecutor(session=None, binding_engine=engine, enable_llm_fallback=True)
-    from src.core.llm_client import get_llm_client
+    executor = StaticExecutor(session=None, binding_engine=engine, enable_llm_fallback=True)
+    from src.shared.llm_client import get_llm_client
     executor.fallback_mapper = LLMFallbackMapper(model=get_llm_client())
     
     # Passing unresolved string inside an argument dictionary
-    tool_args = {"amount": "$step_1.missing_field", "from_currency": "USD", "to_currency": "EUR"}
+    tool_args = {"amount": "$task_1.missing_field", "from_currency": "USD", "to_currency": "EUR"}
     
     res = executor._resolve_variables(
         tool_args,

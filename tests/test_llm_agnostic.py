@@ -1,7 +1,7 @@
 from unittest.mock import patch, MagicMock
 import os
 import pytest
-from src.core.llm_client import get_llm_client
+from src.shared.llm_client import get_llm_client
 
 def test_get_llm_client_google_genai():
     # Clear cache to ensure tests run with mock environments
@@ -58,16 +58,16 @@ def test_get_llm_client_missing_key():
             get_llm_client("gemini-2.5-flash")
 
 
-    from src.core.planner.models import Plan, PlanStep
+    from src.static_agent.models import Plan, PlanTask as PlanStep
     step = PlanStep(
-        id="step_1",
+        id="task_1",
         tool_name="some_tool",
         args={},
         reason="Because we need to query search"
     )
     plan = Plan(
-        steps=[step],
+        tasks=[step],
         reason="This plan converts searched products."
     )
     assert plan.reason == "This plan converts searched products."
-    assert plan.steps[0].reason == "Because we need to query search"
+    assert plan.tasks[0].reason == "Because we need to query search"
