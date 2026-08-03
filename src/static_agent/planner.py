@@ -44,7 +44,7 @@ class Planner:
 
         from src.shared.llm_client import run_structured_llm
         
-        prompt = PromptComposer.from_file("planner_prompt.md", PROMPTS_DIR)
+        prompt = PromptComposer.from_file("planner_prompt.yaml", PROMPTS_DIR)
         prompt.set_slot("available_tools", json.dumps(available_tools_metadata, indent=2))
         prompt.set_slot("binding_instruction", binding_instruction)
         prompt.set_slot("binding_failed_token", self.binding_failed_token)

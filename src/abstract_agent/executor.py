@@ -131,7 +131,7 @@ class AbstractExecutor:
         available_tools: List[dict],
     ) -> ToolSelection:
         """Use LLM to match intent to the best available tool."""
-        prompt = PromptComposer.from_file("tool_resolver_prompt.md", PROMPTS_DIR)
+        prompt = PromptComposer.from_file("tool_resolver_prompt.yaml", PROMPTS_DIR)
         prompt.set_slots({
             "intent": intent,
             "expected_input": expected_input or "N/A",
@@ -158,7 +158,7 @@ class AbstractExecutor:
         dependency_context: dict,
     ) -> dict:
         """Use LLM to generate tool arguments."""
-        prompt = PromptComposer.from_file("abstract_bind_prompt.md", PROMPTS_DIR)
+        prompt = PromptComposer.from_file("abstract_bind_prompt.yaml", PROMPTS_DIR)
         prompt.set_slots({
             "tool_name": tool_name,
             "target_schema": json.dumps(input_schema, indent=2),

@@ -1088,6 +1088,12 @@ wheels = [
 name = "prompt-composer"
 version = "0.1.0"
 source = { editable = "packages/prompt_composer" }
+dependencies = [
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pyyaml", specifier = ">=6.0" }]
 
 [[package]]
 name = "py-key-value-aio"

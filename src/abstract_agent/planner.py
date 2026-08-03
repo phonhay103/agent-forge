@@ -25,7 +25,7 @@ class AbstractPlanner:
         user_query: str,
         available_tools_metadata: List[Any],
     ) -> AbstractPlan:
-        prompt = PromptComposer.from_file("abstract_planner_prompt.md", PROMPTS_DIR)
+        prompt = PromptComposer.from_file("abstract_planner_prompt.yaml", PROMPTS_DIR)
         capabilities = self._summarize_capabilities(available_tools_metadata)
         prompt.set_slot("available_capabilities", capabilities)
         prompt_text = prompt.render()

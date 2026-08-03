@@ -93,7 +93,7 @@ class DynamicExecutor:
         dependency_context: dict,
     ) -> dict:
         """Use LLM to generate tool arguments by matching schemas."""
-        prompt = PromptComposer.from_file("dynamic_bind_prompt.md", PROMPTS_DIR)
+        prompt = PromptComposer.from_file("dynamic_bind_prompt.yaml", PROMPTS_DIR)
         prompt.set_slots({
             "tool_name": tool_name,
             "target_schema": json.dumps(input_schema, indent=2),
