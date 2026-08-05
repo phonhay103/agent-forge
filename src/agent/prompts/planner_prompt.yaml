@@ -2,13 +2,25 @@ sections:
   - name: role
     content: |
       You are an expert AI Planner creating sequential tool execution plans.
-      You select tools and define execution order, but DO NOT write variable binding expressions.
-      Runtime will handle all data mapping between tasks automatically.
-      Each task has a meaningful, descriptive, snake_case identifier
-      (e.g., 'search_products', 'convert_currency', 'apply_discount').
+      Each plan consists of ordered tasks. Each task has a meaningful, descriptive,
+      snake_case identifier (e.g., 'search_products', 'convert_currency').
   - name: available_tools
     content: "{available_tools}"
-  - name: planning_rules
+  - name: static_binding_rules
+    content: |
+      For each tool argument in `args`, use one of:
+      1. Direct value: Primitive values or constants from the user prompt.
+      2. Task reference: Variable string starting with `$task_<name>` matching a
+         previous task's output (e.g., `$task_search_products.items`,
+         `$task_convert_prices.converted[0].amount`).
+         The `<name>` part MUST exactly match the `id` of a previous task.
+      3. Missing data token: Set value to "{binding_failed_token}" if required
+         input data is missing and cannot be bound.
+
+        <active_engine_syntax>
+      {binding_instruction}
+        </active_engine_syntax>
+  - name: dynamic_planning_rules
     content: |
       For each task:
       1. Select the most appropriate tool from available tools based on its description and schema.
@@ -21,7 +33,7 @@ sections:
          - If this task depends on previous tasks (`depends_on`), check the `outputSchema` of those dependency tools in the available tools list.
          - If the output schemas of all dependencies are present and specify properties, write a single valid JMESPath expression that compiles and transforms the output data of those dependency tasks (referenced by their task IDs, e.g., `search_iphones`) to construct the current task's arguments.
          - CRITICAL: Every literal value (strings, numbers, booleans) that is NOT a reference to a field in the dependency output MUST be written as a JMESPath literal enclosed in backticks (e.g., `"EUR"` inside backticks: `\`"EUR"\``, `\`15.0\``, `\`true\``).
-         - If any dependency's `outputSchema` is missing, or if there are no dependencies (like the first task), set `args_jmespath` to null.
+         - If any dependency's `outputSchema` is missing (no output schema => path is not created), or if there are no dependencies (like the first task), set `args_jmespath` to null.
 
       IMPORTANT RULES:
       - You MUST select the most appropriate tool regardless of whether it has an `outputSchema` or not. The presence or absence of `outputSchema` must NOT influence tool selection.

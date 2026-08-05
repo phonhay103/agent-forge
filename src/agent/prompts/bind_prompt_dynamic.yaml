@@ -22,12 +22,6 @@ sections:
       1. Analyze the Source Schema structure and Target Schema structure.
       2. Write a single, valid JMESPath expression that produces an object matching the Target Schema.
       3. Map fields from the source to the target to satisfy the User Intent.
-       4. CRITICAL: Every literal value (strings, numbers, booleans) that is NOT a reference to a field in the source schema MUST be written as a JMESPath literal enclosed in backticks.
-          - String literals MUST have double quotes inside backticks. Example: `product_name: `"iPhones"`` (NOT `product_name: "iPhones"` or `product_name: iPhones`).
-          - Number literals MUST be enclosed in backticks. Example: `discount_percent: `15.0`` or `limit: `5``.
-          - Boolean literals MUST be enclosed in backticks. Example: `active: `true``.
-        5. If you need to construct a static object or list (e.g., when the Source Schema is empty or doesn't contain the required data, like the network info in supply chain analysis), you MUST write the entire object/list as a single JSON literal enclosed in backticks:
-           - Example: `\`{"input": {"network_info": {"network_name": "TestNet", "version": "v1.0"}, "regions": [...]}}\``
-           - TIP: Keep the constructed static object as small and minimal as possible while remaining valid under the target schema (e.g., include only a single region, a single block, and a single aisle with one item batch). This drastically reduces bracket nesting errors.
-           - CRITICAL (2D Arrays): A 2D list/matrix (such as `warehouse_matrix` or `shelf_grid` which are lists of lists, e.g. `List[List[...]]`) must be formatted as a single outer list containing one or more inner list rows, for example: `[[row1_item1, row1_item2]]` or `[[row1_item1], [row2_item1]]`.
+        4. You are ONLY responsible for variable binding (mapping fields between the Source Schema and Target Schema). You are NOT allowed to invent or map hardcoded values (like string, number, or boolean literals) that do not exist in the Source Schema.
+        5. If a required field in the Target Schema cannot be resolved/mapped from the Source Schema, you MUST map that field to the literal value "__BINDING_FAILED__" (enclosed in backticks: `"__BINDING_FAILED__"`).
         6. Output ONLY the raw JMESPath expression. Do not wrap it in markdown code blocks or quotes.

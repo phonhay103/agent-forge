@@ -38,7 +38,9 @@ class UnifiedPlanner:
 
         if self.use_pre_planned_jmespath:
             # Dynamic / Hybrid mapping mode
-            prompt = self.prompt or PromptComposer.from_file("planner_prompt_dynamic.yaml", PROMPTS_DIR)
+            prompt = self.prompt or PromptComposer.from_file("planner_prompt.yaml", PROMPTS_DIR)
+            if "static_binding_rules" in prompt._sections:
+                prompt.remove_section("static_binding_rules")
             prompt.set_variable("available_tools", json.dumps(available_tools_metadata, indent=2))
             prompt_text = prompt.render()
 
@@ -58,7 +60,9 @@ class UnifiedPlanner:
             binding_instruction = engine.get_system_prompt_instruction()
             regex_pattern = engine.get_regex_pattern() if hasattr(engine, "get_regex_pattern") else None
 
-            prompt = self.prompt or PromptComposer.from_file("planner_prompt_static.yaml", PROMPTS_DIR)
+            prompt = self.prompt or PromptComposer.from_file("planner_prompt.yaml", PROMPTS_DIR)
+            if "dynamic_planning_rules" in prompt._sections:
+                prompt.remove_section("dynamic_planning_rules")
             prompt.set_variable("available_tools", json.dumps(available_tools_metadata, indent=2))
             prompt.set_variable("binding_instruction", binding_instruction)
             prompt.set_variable("binding_failed_token", self.binding_failed_token)
@@ -108,7 +112,9 @@ class Planner(UnifiedPlanner):
         binding_instruction = engine.get_system_prompt_instruction()
         regex_pattern = engine.get_regex_pattern() if hasattr(engine, "get_regex_pattern") else None
 
-        prompt = self.prompt or PromptComposer.from_file("planner_prompt_static.yaml", PROMPTS_DIR)
+        prompt = self.prompt or PromptComposer.from_file("planner_prompt.yaml", PROMPTS_DIR)
+        if "dynamic_planning_rules" in prompt._sections:
+            prompt.remove_section("dynamic_planning_rules")
         prompt.set_variable("available_tools", json.dumps(available_tools_metadata, indent=2))
         prompt.set_variable("binding_instruction", binding_instruction)
         prompt.set_variable("binding_failed_token", self.binding_failed_token)
@@ -151,7 +157,9 @@ class DynamicPlanner(UnifiedPlanner):
         user_query: str,
         available_tools_metadata: List[Any],
     ) -> UnifiedPlan:
-        prompt = self.prompt or PromptComposer.from_file("planner_prompt_dynamic.yaml", PROMPTS_DIR)
+        prompt = self.prompt or PromptComposer.from_file("planner_prompt.yaml", PROMPTS_DIR)
+        if "static_binding_rules" in prompt._sections:
+            prompt.remove_section("static_binding_rules")
         prompt.set_variable("available_tools", json.dumps(available_tools_metadata, indent=2))
         prompt_text = prompt.render()
 

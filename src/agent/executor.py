@@ -194,33 +194,33 @@ class UnifiedExecutor:
                     directive=task.directive,
                 )
 
-                # Ensure there are no unresolved references or tokens left
-                def find_unresolved_issue(v: Any) -> Optional[str]:
-                    if v == self.binding_failed_token:
-                        return f"Sent by Planner due to missing input data ('{self.binding_failed_token}')"
-                    if VariableParser.is_variable_reference(v):
-                        return f"Failed to evaluate expression '{v}'"
-                    if isinstance(v, dict):
-                        for val in v.values():
-                            res = find_unresolved_issue(val)
-                            if res:
-                                return res
-                    if isinstance(v, list):
-                        for val in v:
-                            res = find_unresolved_issue(val)
-                            if res:
-                                return res
-                    return None
+            # Ensure there are no unresolved references or tokens left
+            def find_unresolved_issue(v: Any) -> Optional[str]:
+                if v == self.binding_failed_token:
+                    return f"Sent by Planner/Binder due to missing input data ('{self.binding_failed_token}')"
+                if VariableParser.is_variable_reference(v):
+                    return f"Failed to evaluate expression '{v}'"
+                if isinstance(v, dict):
+                    for val in v.values():
+                        res = find_unresolved_issue(val)
+                        if res:
+                            return res
+                if isinstance(v, list):
+                    for val in v:
+                        res = find_unresolved_issue(val)
+                        if res:
+                            return res
+                return None
 
-                issue = find_unresolved_issue(resolved_args)
-                if issue:
-                    err_msg = (
-                        f"Execution Halted: Variable binding failed for task '{task.id}' "
-                        f"using engine '{self.binding_engine.binding_type.value}'. "
-                        f"Reason: {issue}."
-                    )
-                    logger.error(err_msg)
-                    raise ValueError(err_msg)
+            issue = find_unresolved_issue(resolved_args)
+            if issue:
+                err_msg = (
+                    f"Execution Halted: Variable binding failed for task '{task.id}' "
+                    f"using engine '{self.binding_engine.binding_type.value}'. "
+                    f"Reason: {issue}."
+                )
+                logger.error(err_msg)
+                raise ValueError(err_msg)
 
             # Auto-wrap in {"input": ...} if required
             if target_tool_input_schema and "input" in target_tool_input_schema.get("properties", {}):
