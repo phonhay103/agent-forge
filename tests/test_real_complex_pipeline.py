@@ -132,11 +132,9 @@ async def test_complex_pipeline():
                     ]
                 )
 
-                # Initialize our optimized HeadlessExecutor with the specific engine
                 executor = HeadlessExecutor(
                     session=mcp_client,
                     binding_engine=engine_name,
-                    enable_llm_fallback=False
                 )
 
                 # Execute the complex plan

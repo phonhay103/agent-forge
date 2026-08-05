@@ -259,7 +259,6 @@ class UnifiedExecutor:
         store: Dict[str, Any],
         target_tool_input_schema: Optional[Dict[str, Any]] = None,
         task_schemas_store: Optional[Dict[str, Any]] = None,
-        enable_llm_fallback: bool = False,
         directive: Optional[str] = None,
     ) -> Any:
         context = BindingContext.from_dict(store)
@@ -316,7 +315,6 @@ class StaticExecutor(UnifiedExecutor):
         self,
         session: MCPSessionProtocol,
         binding_engine: Union[str, BaseBindingEngine] = "jmespath",
-        enable_llm_fallback: bool = False,
         model: Optional[Any] = None,
         binding_failed_token: Optional[str] = None,
         fallback_mapper: Optional[Any] = None,

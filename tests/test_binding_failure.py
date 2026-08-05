@@ -14,7 +14,6 @@ async def test_binding_failure_stops_execution():
     executor = HeadlessExecutor(
         mcp_client,
         binding_engine="jmespath",
-        enable_llm_fallback=False
     )
     
     # Create a plan with an unresolved task reference

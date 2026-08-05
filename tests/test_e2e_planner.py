@@ -5,8 +5,8 @@ from httpx import AsyncClient
 from src.agent.planner import Planner
 from src.agent.executor import StaticExecutor as HeadlessExecutor
 from src.shared.test_inputs import TEST_SUITE
-async def run_e2e_test(test_id, test_query, binding_type, enable_llm_fallback):
-    print(f"[{test_id}] Starting E2E test with fallback={enable_llm_fallback}")
+async def run_e2e_test(test_id, test_query, binding_type):
+    print(f"[{test_id}] Starting E2E test")
     
     # Fake tools metadata
     tools_metadata = [
@@ -52,7 +52,6 @@ async def run_e2e_test(test_id, test_query, binding_type, enable_llm_fallback):
         test_query,
         tools_metadata,
         binding_type=binding_type,
-        enable_llm_fallback=enable_llm_fallback
     )
     
     print(f"[{test_id}] Plan generated with {len(plan.tasks)} tasks")
@@ -68,13 +67,13 @@ import os
 async def test_e2e_planner_jmespath():
     if not os.getenv("GOOGLE_API_KEY"):
         pytest.skip("GOOGLE_API_KEY is not set.")
-    await run_e2e_test("T1", "Search for global tech supply chain and analyze its supply chain structure.", "jmespath", True)
+    await run_e2e_test("T1", "Search for global tech supply chain and analyze its supply chain structure.", "jmespath")
 
 @pytest.mark.anyio
 async def test_e2e_planner_jsonpath():
     if not os.getenv("GOOGLE_API_KEY"):
         pytest.skip("GOOGLE_API_KEY is not set.")
-    await run_e2e_test("T2", "Search for Acme Corp org structure and process the organization data.", "jsonpath", False)
+    await run_e2e_test("T2", "Search for Acme Corp org structure and process the organization data.", "jsonpath")
 
 
 def test_static_agent_injection():

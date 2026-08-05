@@ -33,7 +33,6 @@ class UnifiedPlanner:
         user_query: str,
         available_tools_metadata: List[Any],
         binding_type: Union[str, BaseBindingEngine] = "jmespath",
-        enable_llm_fallback: bool = False,
     ) -> UnifiedPlan:
         from src.shared.llm_client import run_structured_llm
 
@@ -104,7 +103,6 @@ class Planner(UnifiedPlanner):
         user_query: str,
         available_tools_metadata: List[Any],
         binding_type: Union[str, BaseBindingEngine] = "jmespath",
-        enable_llm_fallback: bool = False,
     ) -> UnifiedPlan:
         engine = get_binding_engine(binding_type) if isinstance(binding_type, str) else binding_type
         binding_instruction = engine.get_system_prompt_instruction()

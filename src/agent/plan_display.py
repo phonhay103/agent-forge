@@ -51,7 +51,6 @@ def format_plan_display(
     plan: Any,
     tools_metadata: List[Dict[str, Any]],
     binding_type: str = "jmespath",
-    enable_llm_fallback: bool = False,
 ) -> str:
     # Check if this is a dynamic/hybrid plan
     is_dynamic = any(
@@ -128,8 +127,7 @@ def format_plan_display(
             wrapped = [reason_text[i:i + max_width] for i in range(0, len(reason_text), max_width)]
             for line in wrapped:
                 lines.append(f"║ {line:<60} ║")
-        fallback_label = "ON" if enable_llm_fallback else "OFF"
-        lines.append(f"║ Total Tasks: {total} │ Engine: {binding_type.upper():<10} │ Fallback: {fallback_label:<5}  ║")
+        lines.append(f"║ Total Tasks: {total:<2} │ Engine: {binding_type.upper():<10}{' ' * 24}║")
         lines.append("╚══════════════════════════════════════════════════════════════╝")
         lines.append("")
 

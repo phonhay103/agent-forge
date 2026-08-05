@@ -47,24 +47,21 @@ async def run_unified_agent(dynamic_binding_mode: Optional[DynamicBindingMode], 
         task = input("Enter your custom task: ").strip()
 
     binding_type = "jmespath"
-    enable_llm_fallback = False
 
     # Static mode check
     if dynamic_binding_mode is None:
         # Ask for binding engine only in static mode
         print("\n--- Select Variable Binding Engine ---")
-        print("[1] JMESPath (with Automatic LLM Direct Mapping Fallback)")
-        print("[2] JSONPath (with Automatic LLM Direct Mapping Fallback)")
-        print("[3] Dot Notation (with Automatic LLM Direct Mapping Fallback)")
+        print("[1] JMESPath")
+        print("[2] JSONPath")
+        print("[3] Dot Notation")
         engine_choice = input("Select binding engine [1-3] (default 1): ").strip()
         if engine_choice == "2":
             binding_type = "jsonpath"
         elif engine_choice == "3":
             binding_type = "dot_notation"
         
-        fallback_choice = input("Enable Automatic LLM Direct Mapping Fallback? [y/N] (default No): ").strip().lower()
-        enable_llm_fallback = fallback_choice in ("y", "yes", "true", "1")
-        print(f"Selected Binding Engine: {binding_type.upper()} (LLM Fallback Enabled: {enable_llm_fallback})\n")
+        print(f"Selected Binding Engine: {binding_type.upper()}\n")
 
     print(f"\n--- Connecting to MCP Server at {MCP_SERVER_URL} ---")
     
@@ -85,7 +82,6 @@ async def run_unified_agent(dynamic_binding_mode: Optional[DynamicBindingMode], 
                         task,
                         tools_metadata,
                         binding_type=binding_type,
-                        enable_llm_fallback=enable_llm_fallback
                     )
                 except Exception as plan_err:
                     print(f"\n[PLANNING ERROR] Failed to create plan: {format_exception(plan_err)}")
@@ -95,7 +91,6 @@ async def run_unified_agent(dynamic_binding_mode: Optional[DynamicBindingMode], 
                     plan,
                     tools_metadata,
                     binding_type=binding_type,
-                    enable_llm_fallback=enable_llm_fallback
                 ))
                 print()
 
@@ -104,7 +99,6 @@ async def run_unified_agent(dynamic_binding_mode: Optional[DynamicBindingMode], 
                     mcp_client,
                     dynamic_binding_mode=dynamic_binding_mode,
                     binding_engine=binding_type,
-                    enable_llm_fallback=enable_llm_fallback
                 )
                 try:
                     results: ExecutionContext = await executor.run_plan(plan)
