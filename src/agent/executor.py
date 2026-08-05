@@ -139,8 +139,8 @@ class UnifiedExecutor:
             )
 
             if is_dynamic_mode:
-                # Default to JMESPATH_LLM if not specified but task.args is None
-                mode = self.dynamic_binding_mode or DynamicBindingMode.JMESPATH_LLM
+                # Default to JMESPATH_VALIDATE if not specified but task.args is None
+                mode = self.dynamic_binding_mode or DynamicBindingMode.JMESPATH_VALIDATE
 
                 # DYNAMIC / HYBRID BINDING FLOW
                 dependency_context = {

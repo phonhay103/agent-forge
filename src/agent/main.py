@@ -136,29 +136,16 @@ async def main_static():
 
 
 async def main_dynamic():
-    print("\n--- Select Dynamic Binding Mode ---")
-    print("[1] JMESPath with Validation (validate expected schemas)")
-    print("[2] JMESPath with LLM (re-bind using LLM)")
-    print("[3] LLM Direct (direct mapping using LLM)")
-    choice = input("Select [1-3] (default 1): ").strip()
-    
-    if choice == "2":
-        mode = DynamicBindingMode.JMESPATH_LLM
-    elif choice == "3":
-        mode = DynamicBindingMode.LLM_DIRECT
-    else:
-        mode = DynamicBindingMode.JMESPATH_VALIDATE
-        
     await run_unified_agent(
-        dynamic_binding_mode=mode,
-        mode_title=f"Dynamic ({mode.value})"
+        dynamic_binding_mode=DynamicBindingMode.JMESPATH_VALIDATE,
+        mode_title="Dynamic Binding"
     )
 
 
 async def main():
     print("Select Mode:")
     print("[1] Static Binding Mode")
-    print("[2] Dynamic Schema-Match Mode")
+    print("[2] Dynamic Binding Mode")
     choice = input("Choice: ").strip()
     if choice == "2":
         await main_dynamic()
