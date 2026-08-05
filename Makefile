@@ -21,10 +21,10 @@ agent: ## Run the interactive Multi-Agent System
 	uv run python -m src.main
 
 agent-static: ## Run Static Binding Agent directly
-	uv run python -m src.static_agent
+	uv run python -c "import asyncio; from src.agent.main import main_static; asyncio.run(main_static())"
 
 agent-dynamic: ## Run Dynamic Binding Agent directly
-	uv run python -m src.dynamic_agent
+	uv run python -c "import asyncio; from src.agent.main import main_dynamic; asyncio.run(main_dynamic())"
 
 agent-abstract: ## Run Abstract Planning Agent directly
 	uv run python -m src.abstract_agent

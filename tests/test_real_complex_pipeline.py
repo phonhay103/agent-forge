@@ -12,11 +12,11 @@ from src.mcp.schema.models import (
     SupplyChainInput, NetworkMetadata, RegionNode, WarehouseBlock,
     ManagerInfo, ContactDetail, AisleStorage, ItemBatch, ItemSpec
 )
-from src.static_agent.models import Plan, PlanTask as PlanStep
-from src.static_agent.executor import StaticExecutor as HeadlessExecutor
+from src.agent.models import Plan, PlanTask as PlanStep
+from src.agent.executor import StaticExecutor as HeadlessExecutor
 from src.shared.executor_models import ExecutionContext
 from src.shared.mcp_protocols import MCPClient
-from src.static_agent.main import MCP_SERVER_URL
+from src.agent.main import MCP_SERVER_URL
 
 # Configure logging to see the optimized execution steps and lru_caches in action
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")

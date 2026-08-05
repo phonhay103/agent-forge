@@ -1,14 +1,15 @@
 import asyncio
 import os
 import sys
-import subprocess
+from typing import Optional
 from dotenv import load_dotenv
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
-from src.static_agent.planner import Planner, Plan
-from src.static_agent.executor import StaticExecutor
-from src.static_agent.plan_display import format_plan_display
+from src.agent.planner import UnifiedPlanner
+from src.agent.models import UnifiedPlan, DynamicBindingMode
+from src.agent.executor import UnifiedExecutor
+from src.agent.plan_display import format_plan_display
 from src.shared.mcp_protocols import MCPClient
 from src.shared.test_inputs import TEST_SUITE
 from src.shared.executor_models import ExecutionContext
@@ -21,11 +22,12 @@ def format_exception(e: BaseException) -> str:
         return "\n".join(format_exception(sub) for sub in e.exceptions)
     return f"{type(e).__name__}: {e}"
 
-async def main():
+
+async def run_unified_agent(dynamic_binding_mode: Optional[DynamicBindingMode], mode_title: str):
     load_dotenv()
 
     print("==================================================")
-    print("      Static Binding Agent                       ")
+    print(f"      Unified Agent: {mode_title} Mode            ")
     print("==================================================")
     print(f"Server URL: {MCP_SERVER_URL}\n")
 
@@ -43,19 +45,27 @@ async def main():
         print(f"Query: {task}\n")
     else:
         task = input("Enter your custom task: ").strip()
-    print("\n--- Select Variable Binding Engine ---")
-    print("[1] JMESPath (with Automatic LLM Direct Mapping Fallback)")
-    print("[2] JSONPath (with Automatic LLM Direct Mapping Fallback)")
-    print("[3] Dot Notation (with Automatic LLM Direct Mapping Fallback)")
-    engine_choice = input("Select binding engine [1-3] (default 1): ").strip()
+
     binding_type = "jmespath"
-    if engine_choice == "2":
-        binding_type = "jsonpath"
-    elif engine_choice == "3":
-        binding_type = "dot_notation"
-    fallback_choice = input("Enable Automatic LLM Direct Mapping Fallback? [y/N] (default No): ").strip().lower()
-    enable_llm_fallback = fallback_choice in ("y", "yes", "true", "1")
-    print(f"Selected Binding Engine: {binding_type.upper()} (LLM Fallback Enabled: {enable_llm_fallback})\n")
+    enable_llm_fallback = False
+
+    # Static mode check
+    if dynamic_binding_mode is None:
+        # Ask for binding engine only in static mode
+        print("\n--- Select Variable Binding Engine ---")
+        print("[1] JMESPath (with Automatic LLM Direct Mapping Fallback)")
+        print("[2] JSONPath (with Automatic LLM Direct Mapping Fallback)")
+        print("[3] Dot Notation (with Automatic LLM Direct Mapping Fallback)")
+        engine_choice = input("Select binding engine [1-3] (default 1): ").strip()
+        if engine_choice == "2":
+            binding_type = "jsonpath"
+        elif engine_choice == "3":
+            binding_type = "dot_notation"
+        
+        fallback_choice = input("Enable Automatic LLM Direct Mapping Fallback? [y/N] (default No): ").strip().lower()
+        enable_llm_fallback = fallback_choice in ("y", "yes", "true", "1")
+        print(f"Selected Binding Engine: {binding_type.upper()} (LLM Fallback Enabled: {enable_llm_fallback})\n")
+
     print(f"\n--- Connecting to MCP Server at {MCP_SERVER_URL} ---")
     
     try:
@@ -68,8 +78,10 @@ async def main():
                 print(f"Discovered {len(tools_metadata)} tools from MCP server.\n")
 
                 try:
-                    planner = Planner()
-                    plan: Plan = planner.create_plan(
+                    # Only validate expected schemas in JMESPATH_VALIDATE mode
+                    use_pre_planned = (dynamic_binding_mode == DynamicBindingMode.JMESPATH_VALIDATE)
+                    planner = UnifiedPlanner(use_pre_planned_jmespath=use_pre_planned)
+                    plan: UnifiedPlan = planner.create_plan(
                         task,
                         tools_metadata,
                         binding_type=binding_type,
@@ -88,8 +100,9 @@ async def main():
                 print()
 
                 mcp_client = MCPClient(session)
-                executor = StaticExecutor(
+                executor = UnifiedExecutor(
                     mcp_client,
+                    dynamic_binding_mode=dynamic_binding_mode,
                     binding_engine=binding_type,
                     enable_llm_fallback=enable_llm_fallback
                 )
@@ -113,6 +126,45 @@ async def main():
         else:
             print(f"\n[AGENT ERROR] {err_msg}")
         sys.exit(1)
+
+
+async def main_static():
+    await run_unified_agent(
+        dynamic_binding_mode=None,
+        mode_title="Static Binding"
+    )
+
+
+async def main_dynamic():
+    print("\n--- Select Dynamic Binding Mode ---")
+    print("[1] JMESPath with Validation (validate expected schemas)")
+    print("[2] JMESPath with LLM (re-bind using LLM)")
+    print("[3] LLM Direct (direct mapping using LLM)")
+    choice = input("Select [1-3] (default 1): ").strip()
+    
+    if choice == "2":
+        mode = DynamicBindingMode.JMESPATH_LLM
+    elif choice == "3":
+        mode = DynamicBindingMode.LLM_DIRECT
+    else:
+        mode = DynamicBindingMode.JMESPATH_VALIDATE
+        
+    await run_unified_agent(
+        dynamic_binding_mode=mode,
+        mode_title=f"Dynamic ({mode.value})"
+    )
+
+
+async def main():
+    print("Select Mode:")
+    print("[1] Static Binding Mode")
+    print("[2] Dynamic Schema-Match Mode")
+    choice = input("Choice: ").strip()
+    if choice == "2":
+        await main_dynamic()
+    else:
+        await main_static()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -15,9 +15,101 @@ from json_schema_binder.models import (
 T = TypeVar("T")
 
 
+import re
+
 @functools.lru_cache(maxsize=1024)
 def _get_compiled_jmespath(expr: str):
     return jmespath.compile(expr)
+
+
+def balance_json_brackets(json_str: str) -> str:
+    """
+    Idempotent helper that repairs truncated/unbalanced JSON bracket sequences at the end of a string.
+    """
+    stripped = json_str.rstrip()
+    prefix = stripped.rstrip('}]')
+    open_brackets = []
+    in_string = False
+    escape = False
+    
+    for c in prefix:
+        if escape:
+            escape = False
+            continue
+        if c == '\\':
+            escape = True
+            continue
+        if c == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+            
+        if c in '{[':
+            open_brackets.append(c)
+        elif c in '}]':
+            if not open_brackets:
+                continue
+            if c == '}' and open_brackets[-1] == '{':
+                open_brackets.pop()
+            elif c == ']' and open_brackets[-1] == '[':
+                open_brackets.pop()
+                
+    closing = []
+    for b in reversed(open_brackets):
+        if b == '{':
+            closing.append('}')
+        else:
+            closing.append(']')
+            
+    return prefix + ''.join(closing)
+
+
+def normalize_jmespath(expr: str) -> str:
+    """
+    Cleans up common JSON-style formatting mistakes made by LLMs in JMESPath expressions,
+    such as wrapping keys in double quotes or wrapping backticked literals in double quotes.
+    Safely preserves JSON literals enclosed in backticks.
+    """
+    if not expr:
+        return expr
+    expr = expr.strip()
+    
+    # If the expression starts with a backtick but does not end with one, append the closing backtick.
+    if expr.startswith('`') and not expr.endswith('`'):
+        expr = expr + '`'
+
+    # If the entire expression is wrapped in backticks, it is a single top-level JSON literal.
+    if expr.startswith('`') and expr.endswith('`'):
+        content = expr[1:-1]
+        balanced = balance_json_brackets(content)
+        return '`' + balanced + '`'
+
+    # 1. Fix double quotes wrapped around backticked literals, e.g.,
+    # key: "`value`" or key: "`"value"`"
+    def replacer(match):
+        key = match.group(1)
+        val = match.group(2).strip()
+        val_clean = val.strip('"\'')
+        
+        if val_clean.lower() in ('true', 'false') or val_clean.replace('.', '', 1).isdigit():
+            return f"{key}: `{val_clean}`"
+        else:
+            return f"{key}: `\"{val_clean}\"`"
+
+    expr = re.sub(r'"?(\w+)"?:\s*"`([^`]+)`"', replacer, expr)
+    
+    # 2. Split by backticks to process keys/identifiers only outside of literals
+    parts = expr.split('`')
+    for i in range(len(parts)):
+        if i % 2 == 0:
+            # We are outside backticks; safe to strip double quotes from keys
+            parts[i] = re.sub(r'"(\w+)":', r'\1:', parts[i])
+        else:
+            # We are inside a JSON literal; balance its brackets
+            parts[i] = balance_json_brackets(parts[i])
+            
+    return '`'.join(parts)
 
 
 @register_binding_engine("jmespath")
@@ -46,7 +138,8 @@ class JMESPathBindingEngine(BaseBindingEngine):
             )
 
         try:
-            compiled = _get_compiled_jmespath(expr)
+            cleaned_expr = normalize_jmespath(expr)
+            compiled = _get_compiled_jmespath(cleaned_expr)
             res = compiled.search(data)
             return EvaluationResult(
                 value=res,

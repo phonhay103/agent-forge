@@ -2,8 +2,8 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 from httpx import AsyncClient
-from src.static_agent.planner import Planner
-from src.static_agent.executor import StaticExecutor as HeadlessExecutor
+from src.agent.planner import Planner
+from src.agent.executor import StaticExecutor as HeadlessExecutor
 from src.shared.test_inputs import TEST_SUITE
 async def run_e2e_test(test_id, test_query, binding_type, enable_llm_fallback):
     print(f"[{test_id}] Starting E2E test with fallback={enable_llm_fallback}")
@@ -79,17 +79,7 @@ async def test_e2e_planner_jsonpath():
 
 def test_static_agent_injection():
     from prompt_composer import PromptComposer
-    from json_schema_binder.fallback import LLMFallbackMapper
-    from unittest.mock import AsyncMock, MagicMock
     
     custom_prompt = PromptComposer().set_section("test_sec", "custom template text")
     planner = Planner(prompt=custom_prompt)
     assert planner.prompt == custom_prompt
-    
-    mock_fallback_mapper = LLMFallbackMapper(model=MagicMock())
-    executor = HeadlessExecutor(
-        session=AsyncMock(),
-        enable_llm_fallback=True,
-        fallback_mapper=mock_fallback_mapper
-    )
-    assert executor.fallback_mapper == mock_fallback_mapper

@@ -20,4 +20,3 @@ sections:
         <active_engine_syntax>
       {binding_instruction}
         </active_engine_syntax>
-      {fallback_instruction}

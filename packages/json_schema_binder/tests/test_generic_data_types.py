@@ -13,7 +13,6 @@ from json_schema_binder import (
     BindingContext,
     EvaluationResult,
     MappingResult,
-    LLMFallbackMapper,
 )
 
 
@@ -105,21 +104,3 @@ def test_custom_binding_engine_registration():
     res = custom_engine.evaluate("msg", {"msg": "hello world"})
     assert res.value == "HELLO WORLD"
 
-
-def test_generic_llm_callable_fallback():
-    def mock_llm_callable(prompt: str, schema: type) -> dict:
-        return {"amount": 500.0, "currency": "USD"}
-
-    mapper = LLMFallbackMapper(model=mock_llm_callable)
-    target_schema = {
-        "title": "TransferPayload",
-        "properties": {"amount": {"type": "number"}, "currency": {"type": "string"}},
-    }
-
-    res = mapper.repair_payload(
-        context_store={"total": 500.0},
-        target_schema=target_schema,
-        partially_resolved_payload={"amount": "$missing.amount", "currency": "USD"},
-        directive="Map total to amount",
-    )
-    assert res == {"amount": 500.0, "currency": "USD"}

@@ -58,7 +58,7 @@ def test_get_llm_client_missing_key():
             get_llm_client("gemini-2.5-flash")
 
 
-    from src.static_agent.models import Plan, PlanTask as PlanStep
+    from src.agent.models import Plan, PlanTask as PlanStep
     step = PlanStep(
         id="task_1",
         tool_name="some_tool",

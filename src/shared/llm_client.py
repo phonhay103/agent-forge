@@ -100,8 +100,10 @@ def run_structured_llm(
             HumanMessagePromptTemplate.from_template("{user_query}")
         ])
     else:
+        from langchain_core.messages import HumanMessage
         prompt_template = ChatPromptTemplate([
-            SystemMessage(content=prompt_text)
+            SystemMessage(content=prompt_text),
+            HumanMessage(content="Generate the requested structured output.")
         ])
 
     # Resolve structured model client

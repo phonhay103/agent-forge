@@ -19,11 +19,11 @@ async def main():
     choice = input("Select [1-3] (default 1): ").strip()
 
     if choice == "2":
-        from src.dynamic_agent.main import main as agent_main
+        from src.agent.main import main_dynamic as agent_main
     elif choice == "3":
         from src.abstract_agent.main import main as agent_main
     else:
-        from src.static_agent.main import main as agent_main
+        from src.agent.main import main_static as agent_main
 
     await agent_main()
 

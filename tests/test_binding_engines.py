@@ -4,7 +4,6 @@ from json_schema_binder import (
     JMESPathBindingEngine,
     JSONPathBindingEngine,
     DotNotationBindingEngine,
-    LLMFallbackMapper
 )
 from src.mcp.schema.models import SupplyChainOutput, RegionSummary, BlockSummary
 
@@ -74,85 +73,9 @@ def test_dot_notation_binding_engine():
     assert res.value == "Laptop"
 
 
-
-
-import os
-
-def test_llm_fallback_direct_mapping():
-    if not os.getenv("GOOGLE_API_KEY"):
-        print("Skipping LLM Fallback test because GOOGLE_API_KEY is not set.")
-        return
-    from src.shared.llm_client import get_llm_client
-    mapper = LLMFallbackMapper(model=get_llm_client())
-    context_data = {
-        "total_inventory_value": 5000.0,
-        "low_stock_skus": ["SKU-100", "SKU-200"]
-    }
-    target_tool_input_schema = {
-        "title": "ConvertCurrencyInput",
-        "properties": {
-            "amount": {"type": "number"},
-            "from_currency": {"type": "string"},
-            "to_currency": {"type": "string"}
-        }
-    }
-
-    # Test repair_payload fallback mapping
-    mapped = mapper.repair_payload(
-        context_store={"task_1": context_data},
-        target_schema=target_tool_input_schema,
-        partially_resolved_payload={"amount": "$task_1.non_existent_key", "from_currency": "USD"},
-        directive="Extract total_inventory_value and map to amount"
-    )
-    assert mapped is not None
-    assert mapped.get("amount") == 5000.0
-    assert mapped.get("from_currency") == "USD"
-
-
-def test_jmespath_automatic_llm_fallback():
-    if not os.getenv("GOOGLE_API_KEY"):
-        print("Skipping JMESPath LLM Fallback test because GOOGLE_API_KEY is not set.")
-        return
-    engine = JMESPathBindingEngine()
-    context = {
-        "task_1": {
-            "total_inventory_value": 5000.0,
-            "low_stock_skus": ["SKU-100"]
-        }
-    }
-    target_tool_input_schema = {
-        "title": "ConvertCurrencyInput",
-        "properties": {
-            "amount": {"type": "number"},
-            "from_currency": {"type": "string"},
-            "to_currency": {"type": "string"}
-        }
-    }
-
-    from src.static_agent.executor import StaticExecutor
-    
-    executor = StaticExecutor(session=None, binding_engine=engine, enable_llm_fallback=True)
-    from src.shared.llm_client import get_llm_client
-    executor.fallback_mapper = LLMFallbackMapper(model=get_llm_client())
-    
-    # Passing unresolved string inside an argument dictionary
-    tool_args = {"amount": "$task_1.missing_field", "from_currency": "USD", "to_currency": "EUR"}
-    
-    res = executor._resolve_variables(
-        tool_args,
-        context,
-        target_tool_input_schema=target_tool_input_schema,
-        directive="Extract total_inventory_value and map to amount",
-        enable_llm_fallback=True
-    )
-    assert res is not None
-    assert res.get("amount") == 5000.0
-    assert res.get("from_currency") == "USD"
 if __name__ == "__main__":
     test_factory_creation()
     test_jmespath_binding_engine()
     test_jsonpath_binding_engine()
     test_dot_notation_binding_engine()
-    test_llm_fallback_direct_mapping()
-    test_jmespath_automatic_llm_fallback()
-    print("All binding engine & LLM LangChain fallback tests passed successfully!")
+    print("All binding engine tests passed successfully!")

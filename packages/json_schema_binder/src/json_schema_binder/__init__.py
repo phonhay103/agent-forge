@@ -8,7 +8,6 @@ from json_schema_binder.engines import (
     DotNotationBindingEngine,
 )
 from json_schema_binder.factory import get_binding_engine
-from json_schema_binder.fallback import LLMFallbackMapper
 from json_schema_binder.models import (
     BindingContext,
     EvaluationResult,
@@ -17,7 +16,6 @@ from json_schema_binder.models import (
     SupportedDataType,
 )
 from json_schema_binder.parser import VariableParser
-from json_schema_binder.protocols import FallbackResolverProtocol
 from json_schema_binder.template import TemplateResolver
 
 T = TypeVar("T")
@@ -53,7 +51,7 @@ def resolve_variables(
     context: Union[BindingContext, Mapping[str, Any]],
     engine: Union[str, BaseBindingEngine] = "jmespath",
     target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
-    fallback_mapper: Optional[FallbackResolverProtocol] = None,
+    fallback_mapper: Optional[Any] = None,
     directive: Optional[str] = None,
 ) -> Any:
     """
@@ -64,18 +62,7 @@ def resolve_variables(
     binding_engine = get_binding_engine(engine) if isinstance(engine, str) else engine
     resolver = TemplateResolver(engine=binding_engine)
 
-    resolved = resolver.resolve_payload(payload, binding_ctx)
-
-    if fallback_mapper and target_schema and VariableParser.has_unresolved_references(resolved):
-        repaired = fallback_mapper.repair_payload(
-            context_store=binding_ctx,
-            target_schema=target_schema,
-            partially_resolved_payload=resolved,
-            directive=directive,
-        )
-        return repaired
-
-    return resolved
+    return resolver.resolve_payload(payload, binding_ctx)
 
 
 __all__ = [
@@ -85,10 +72,8 @@ __all__ = [
     "JMESPathBindingEngine",
     "JSONPathBindingEngine",
     "DotNotationBindingEngine",
-    "LLMFallbackMapper",
     "get_binding_engine",
     "VariableParser",
-    "FallbackResolverProtocol",
     "TemplateResolver",
     "evaluate_expression",
     "transform_schema",

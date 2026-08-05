@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from src.dynamic_agent.planner import DynamicPlanner
-from src.dynamic_agent.models import DynamicPlan, DynamicPlanTask
-from src.dynamic_agent.executor import DynamicExecutor
+from src.agent.planner import DynamicPlanner
+from src.agent.models import DynamicPlan, DynamicPlanTask
+from src.agent.executor import DynamicExecutor
 from src.shared.executor_models import ExecutionContext
 
 def test_dynamic_planner():
@@ -22,7 +22,7 @@ def test_dynamic_planner():
         ],
         reason="Test plan"
     )
-    with patch("src.dynamic_agent.planner.run_structured_llm", return_value=mock_plan) as mock_run:
+    with patch("src.agent.planner.run_structured_llm", return_value=mock_plan) as mock_run:
         plan = planner.create_plan("Search for laptops", available_tools)
         assert plan.tasks[0].id == "task_search"
         assert plan.tasks[0].tool_name == "search"

@@ -17,9 +17,15 @@ sections:
          - For subsequent tasks: describe what data from previous tasks is needed and how it should be used.
       3. Write a clear `output_description`: describe what this task produces.
       4. Specify `depends_on`: list task IDs whose outputs are needed by this task.
+      5. Specify `args_jmespath`:
+         - If this task depends on previous tasks (`depends_on`), check the `outputSchema` of those dependency tools in the available tools list.
+         - If the output schemas of all dependencies are present and specify properties, write a single valid JMESPath expression that compiles and transforms the output data of those dependency tasks (referenced by their task IDs, e.g., `search_iphones`) to construct the current task's arguments.
+         - CRITICAL: Every literal value (strings, numbers, booleans) that is NOT a reference to a field in the dependency output MUST be written as a JMESPath literal enclosed in backticks (e.g., `"EUR"` inside backticks: `\`"EUR"\``, `\`15.0\``, `\`true\``).
+         - If any dependency's `outputSchema` is missing, or if there are no dependencies (like the first task), set `args_jmespath` to null.
 
       IMPORTANT RULES:
-      - DO NOT write any variable expressions like $task_xxx or JMESPath/JSONPath syntax.
-      - DO NOT specify concrete argument values — just describe what's needed.
+      - You MUST select the most appropriate tool regardless of whether it has an `outputSchema` or not. The presence or absence of `outputSchema` must NOT influence tool selection.
+      - Do not write JMESPath expressions unless dependency output schemas are available.
+      - Ensure all literal values in JMESPath are correctly enclosed in backticks.
       - Focus on correct tool selection and logical execution ordering.
       - Use `depends_on` to express data flow dependencies between tasks.

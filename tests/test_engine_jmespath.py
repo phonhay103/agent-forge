@@ -1,4 +1,4 @@
-from src.static_agent.executor import StaticExecutor as HeadlessExecutor
+from src.agent.executor import StaticExecutor as HeadlessExecutor
 from src.shared.executor_models import ExecutionContext
 from src.mcp.schema.models import (
     SupplyChainOutput, RegionSummary, BlockSummary,

@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
-from src.static_agent.executor import StaticExecutor as HeadlessExecutor
-from src.static_agent.models import Plan, PlanTask as PlanStep
+from src.agent.executor import StaticExecutor as HeadlessExecutor
+from src.agent.models import Plan, PlanTask as PlanStep
 
 @pytest.mark.anyio
 async def test_binding_failure_stops_execution():
