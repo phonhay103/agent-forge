@@ -6,7 +6,7 @@ import re
 from typing import Any, List, Dict, Union, Optional
 from pydantic import BaseModel, Field
 
-from src.agent.models import UnifiedPlan, UnifiedPlanTask, DynamicBindingMode
+from src.agent.models import UnifiedPlan, UnifiedPlanTask, DynamicBindingMode, StaticPlan, DynamicPlan
 from src.agent.binder import DynamicDataBinder
 from json_schema_binder import (
     BaseBindingEngine,
@@ -97,7 +97,9 @@ class UnifiedExecutor:
 
         self.task_schemas_store: Dict[str, Any] = {}
 
-    async def run_plan(self, plan: UnifiedPlan) -> ExecutionContext:
+    async def run_plan(self, plan: Union[UnifiedPlan, StaticPlan, DynamicPlan]) -> ExecutionContext:
+        if not isinstance(plan, UnifiedPlan):
+            plan = UnifiedPlan.model_validate(plan.model_dump())
         ctx = ExecutionContext()
         logger.info(f"Starting execution of unified plan containing {len(plan.tasks)} tasks.")
 

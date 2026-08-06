@@ -5,7 +5,7 @@ import json
 import pathlib
 import os
 
-from src.agent.models import UnifiedPlan
+from src.agent.models import UnifiedPlan, StaticPlan, DynamicPlan
 from prompt_composer import PromptComposer
 from src.shared.llm_client import run_structured_llm
 
@@ -44,15 +44,15 @@ class UnifiedPlanner:
             prompt.set_variable("available_tools", json.dumps(available_tools_metadata, indent=2))
             prompt_text = prompt.render()
 
-            plan_obj: UnifiedPlan = run_structured_llm(
+            plan_obj: DynamicPlan = run_structured_llm(
                 prompt_text=prompt_text,
                 prompt_variables={"user_query": user_query},
-                schema=UnifiedPlan,
+                schema=DynamicPlan,
                 model_name=self.model_name,
                 temperature=0.0,
                 base_model=self.model,
             )
-            return plan_obj
+            return UnifiedPlan.model_validate(plan_obj.model_dump())
 
         else:
             # Static binding mode
@@ -69,28 +69,28 @@ class UnifiedPlanner:
             
             prompt_text = prompt.render()
 
-            plan_obj: UnifiedPlan = run_structured_llm(
+            plan_obj: StaticPlan = run_structured_llm(
                 prompt_text=prompt_text,
                 prompt_variables={
                     "user_query": user_query
                 },
-                schema=UnifiedPlan,
+                schema=StaticPlan,
                 model_name=self.model_name,
                 temperature=0.0,
                 base_model=self.model
             )
 
             if regex_pattern:
-                plan_obj = UnifiedPlan.model_validate(plan_obj.model_dump(), context={"regex_pattern": regex_pattern})
+                plan_obj = StaticPlan.model_validate(plan_obj.model_dump(), context={"regex_pattern": regex_pattern})
 
-            return plan_obj
+            return UnifiedPlan.model_validate(plan_obj.model_dump())
 
 
 class Planner(UnifiedPlanner):
     def __init__(
         self,
         model: Optional[Any] = None,
-        model_name: str = "gemini-2.5-flash",
+        model_name: str = "gemini-3.5-flash",
         binding_failed_token: Optional[str] = None,
         prompt: Optional[PromptComposer] = None,
     ):
