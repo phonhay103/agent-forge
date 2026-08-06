@@ -169,10 +169,6 @@ def format_plan_display(
             else:
                 lines.append(f"│    Source: User Input (no dependencies){'':<21}│")
 
-            if task.directive:
-                directive = task.directive[:55] + "..." if len(task.directive) > 55 else task.directive
-                lines.append(f"│    Directive: {directive:<46}│")
-
             lines.append("└─────────────────────────────────────────────────────────────┘")
 
             # Arrow connector between steps

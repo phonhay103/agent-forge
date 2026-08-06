@@ -1,9 +1,14 @@
 import json
 import logging
-from typing import Any, Dict, Callable, Optional
-import jmespath
+from typing import Any, Dict, Callable, Optional, Protocol
 from pydantic import BaseModel, Field, model_validator
 from json_schema_binder.engines.jmespath_engine import normalize_jmespath
+from json_schema_binder import get_binding_engine
+
+class BindingEngineProtocol(Protocol):
+    def evaluate(self, expression: str, source_data: Any) -> Any:
+        """Evaluates a single expression against source data."""
+        ...
 
 logger = logging.getLogger("data_binder")
 
@@ -92,13 +97,19 @@ class DynamicDataBinder:
     Decoupled layer for dynamic binding using schema generation and path transformation.
     Adheres to dependency injection by accepting an LLM runner callable.
     """
-    def __init__(self, llm_runner: Callable[[Dict[str, Any], Any], Any]):
+    def __init__(
+        self,
+        llm_runner: Callable[[Dict[str, Any], Any], Any],
+        binding_engine: Optional[BindingEngineProtocol] = None,
+    ):
         """
         Args:
             llm_runner: Callable that accepts a dict of prompt variables and response schema,
                         and returns the parsed structured output.
+            binding_engine: Optional conformant binding engine for evaluation.
         """
         self.llm_runner = llm_runner
+        self.binding_engine = binding_engine or get_binding_engine("jmespath")
 
     def bind_dynamically(
         self,
@@ -145,7 +156,13 @@ class DynamicDataBinder:
         logger.info(f"Generated path expression: {path_expr}")
 
         try:
-            resolved_args = jmespath.search(path_expr, source_data)
+            res = self.binding_engine.evaluate(path_expr, source_data)
+            if hasattr(res, "is_success"):
+                if not res.is_success:
+                    raise ValueError(res.error or "Evaluation failed")
+                resolved_args = res.value
+            else:
+                resolved_args = res
         except Exception as e:
             logger.error(f"Failed to execute path expression '{path_expr}' on source data: {e}")
             raise ValueError(f"Mapping path execution failed: {e}") from e
@@ -190,7 +207,14 @@ class DynamicDataBinder:
             if schemas_match(expected_source_schema, actual_schema):
                 logger.info(f"Reusing pre-planned path: '{planned_path}' (schemas match)")
                 try:
-                    resolved_args = jmespath.search(planned_path, source_data)
+                    res = self.binding_engine.evaluate(planned_path, source_data)
+                    if hasattr(res, "is_success"):
+                        if not res.is_success:
+                            raise ValueError(res.error or "Evaluation failed")
+                        resolved_args = res.value
+                    else:
+                        resolved_args = res
+
                     if isinstance(resolved_args, dict):
                         return resolved_args
                     elif resolved_args is None:

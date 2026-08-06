@@ -43,10 +43,6 @@ class StaticPlanTask(BaseModel):
         default=None,
         description="Direct tool arguments matching the expected parameters, where each value is either a literal primitive (string/number/bool), a nested object/array, or a variable binding string starting with '$' (e.g., '$task_search_products.items')"
     )
-    directive: Optional[str] = Field(
-        default=None,
-        description="Natural Language Data Mapping Directive explaining how outputs from previous steps should be mapped if fallback is enabled"
-    )
     depends_on: List[str] = Field(
         default_factory=list,
         description="List of task IDs whose outputs this task depends on"
@@ -108,11 +104,6 @@ class UnifiedPlanTask(BaseModel):
         default=None,
         description="Direct tool arguments matching the expected parameters, where each value is either a literal primitive (string/number/bool), a nested object/array, or a variable binding string starting with '$' (e.g., '$task_search_products.items')"
     )
-    directive: Optional[str] = Field(
-        default=None,
-        description="Natural Language Data Mapping Directive explaining how outputs from previous steps should be mapped if fallback is enabled"
-    )
-    
     # Dynamic/hybrid mode fields
     input_description: Optional[str] = Field(
         default=None,

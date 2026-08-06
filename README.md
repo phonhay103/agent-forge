@@ -50,9 +50,7 @@ It enables multi-step tool-calling pipelines by automatically generating executi
 
 ## ✨ Key Features
 
-- **Decoupled Architecture**: Zero concrete library coupling between business logic, transport layers, and LLM providers.
 - **Pluggable Binding Engines**: Supports **JMESPath**, **JSONPath**, and **Dot Notation** registered via dynamic decorator factory (`@register_binding_engine`).
-- **Flexible LLM Fallback**: Accepts **any general LangChain ChatModel instance** (`ChatOpenAI`, `ChatAnthropic`, `ChatGoogleGenerativeAI`, `ChatOllama`, `ChatOpenRouter`) combined with Pydantic or JSON Schema for runtime payload repair.
 - **Execution Safety**: Implements strict `HALTED_BY_DESIGN` safeguards to halt execution safely if required step variables cannot be resolved.
 - **Deeply Nested JSON Support**: Tested against 5-level nested enterprise JSON payloads (supply chain matrices, organizational structures).
 - **MCP Protocol Native**: Built on `mcp.ClientSession` and FastMCP using Streamable HTTP transports.
@@ -96,7 +94,6 @@ make server         # Run standalone MCP Streamable HTTP server (src/mcp/server.
 make agent          # Run interactive Planner & Execution Agent (src/core/main.py)
 make test           # Run unit tests via pytest
 make eval           # Run evaluation suite (jmespath)
-make eval-fallback  # Run evaluation suite with LLM fallback enabled
 make eval-jsonpath  # Run evaluation suite using jsonpath engine
 make eval-dot       # Run evaluation suite using dot_notation engine
 make clean          # Clean build artifacts and caches
@@ -157,45 +154,6 @@ print(resolved)
 # Output: {'first_product': 'Laptop'}
 ```
 
-### 2. Standalone LLM Fallback with LangChain Models
-
-Pass any standard LangChain ChatModel instance into `LLMFallbackMapper`:
-
-```python
-from pydantic import BaseModel, Field
-from langchain_google_genai import ChatGoogleGenerativeAI
-from json_schema_binder import resolve_variables
-from json_schema_binder.fallback import LLMFallbackMapper
-
-# 1. Instantiate any LangChain ChatModel
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.0)
-fallback_mapper = LLMFallbackMapper(model=llm)
-
-# 2. Define target schema as Pydantic or Dict
-class ConvertCurrencyInput(BaseModel):
-    amount: float = Field(description="Amount to convert")
-    from_currency: str = Field(description="Source currency code")
-    to_currency: str = Field(description="Target currency code")
-
-context = {
-    "step_1": {
-        "total_inventory_value": 5000.0
-    }
-}
-
-# 3. Resolve with automatic LLM Fallback repair if key is missing
-result = resolve_variables(
-    payload={"amount": "$step_1.missing_key", "from_currency": "USD", "to_currency": "EUR"},
-    context_store=context,
-    engine="jmespath",
-    target_schema=ConvertCurrencyInput,
-    fallback_mapper=fallback_mapper,
-    directive="Extract total_inventory_value and map to amount"
-)
-
-print(result)
-# Output: {'amount': 5000.0, 'from_currency': 'USD', 'to_currency': 'EUR'}
-```
 
 ### 3. Interactive CLI Execution
 
@@ -212,9 +170,6 @@ Run evaluation across all 11 test scenarios with CLI flags:
 ```bash
 # Evaluate with JMESPath engine
 uv run python scripts/evaluate_all.py --engine jmespath
-
-# Evaluate with Automatic LLM Fallback enabled
-uv run python scripts/evaluate_all.py --engine jmespath --fallback
 
 # Run a specific test case (e.g., TC-01)
 uv run python scripts/evaluate_all.py --tc TC-01
@@ -244,10 +199,10 @@ uv run python tests/test_real_complex_pipeline.py
 .
 ├── src/
 │   ├── core/
-│   │   ├── binding/             # Pluggable Binding Engines (JMESPath, JSONPath, Dot) & Fallback
+│   │   ├── binding/             # Pluggable Binding Engines (JMESPath, JSONPath, Dot)
 │   │   ├── engine/              # HeadlessExecutor, VariableParser, Protocols
 │   │   ├── planner/             # LLM Planner & Structured Output Pydantic Models
-│   │   ├── prompts/             # Prompt Templates (Planner, Fallback)
+│   │   ├── prompts/             # Prompt Templates (Planner)
 │   │   ├── llm_client.py        # Centralized LangChain LLM Client Factory
 │   │   ├── main.py              # Main CLI entrypoint
 │   │   └── test_inputs.py       # Test Suite definition (TC-01..TC-11)

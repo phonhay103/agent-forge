@@ -1,6 +1,6 @@
 export PYTHONPATH := .
 
-.PHONY: help install test eval eval-fallback eval-jsonpath eval-dot server agent clean
+.PHONY: help install test eval eval-jsonpath eval-dot server agent clean
 
 # Default target
 .DEFAULT_GOAL := help
@@ -34,9 +34,6 @@ test: ## Run unit tests with pytest
 
 eval: ## Run evaluation suite with default engine (jmespath)
 	uv run python scripts/evaluate_all.py
-
-eval-fallback: ## Run evaluation suite with LLM fallback enabled
-	uv run python scripts/evaluate_all.py --fallback
 
 eval-jsonpath: ## Run evaluation suite using jsonpath engine
 	uv run python scripts/evaluate_all.py --engine jsonpath

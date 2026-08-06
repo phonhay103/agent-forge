@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
-from src.agent.planner import UnifiedPlanner
+from src.agent.planner import StaticPlanner, DynamicPlanner
 from src.agent.models import UnifiedPlan, DynamicBindingMode
-from src.agent.executor import UnifiedExecutor
+from src.agent.executor import StaticExecutor, DynamicExecutor
 from src.agent.plan_display import format_plan_display
 from src.shared.mcp_protocols import MCPClient
 from src.shared.test_inputs import TEST_SUITE
@@ -75,14 +75,19 @@ async def run_unified_agent(dynamic_binding_mode: Optional[DynamicBindingMode], 
                 print(f"Discovered {len(tools_metadata)} tools from MCP server.\n")
 
                 try:
-                    # Only validate expected schemas in JMESPATH_VALIDATE mode
-                    use_pre_planned = (dynamic_binding_mode == DynamicBindingMode.JMESPATH_VALIDATE)
-                    planner = UnifiedPlanner(use_pre_planned_jmespath=use_pre_planned)
-                    plan: UnifiedPlan = planner.create_plan(
-                        task,
-                        tools_metadata,
-                        binding_type=binding_type,
-                    )
+                    if dynamic_binding_mode is not None:
+                        planner = DynamicPlanner()
+                        plan: UnifiedPlan = planner.create_plan(
+                            task,
+                            tools_metadata,
+                        )
+                    else:
+                        planner = StaticPlanner()
+                        plan: UnifiedPlan = planner.create_plan(
+                            task,
+                            tools_metadata,
+                            binding_type=binding_type,
+                        )
                 except Exception as plan_err:
                     print(f"\n[PLANNING ERROR] Failed to create plan: {format_exception(plan_err)}")
                     return
@@ -95,11 +100,16 @@ async def run_unified_agent(dynamic_binding_mode: Optional[DynamicBindingMode], 
                 print()
 
                 mcp_client = MCPClient(session)
-                executor = UnifiedExecutor(
-                    mcp_client,
-                    dynamic_binding_mode=dynamic_binding_mode,
-                    binding_engine=binding_type,
-                )
+                if dynamic_binding_mode is not None:
+                    executor = DynamicExecutor(
+                        mcp_client,
+                        dynamic_binding_mode=dynamic_binding_mode,
+                    )
+                else:
+                    executor = StaticExecutor(
+                        mcp_client,
+                        binding_engine=binding_type,
+                    )
                 try:
                     results: ExecutionContext = await executor.run_plan(plan)
                     print("\n--- Final Execution Results (Pydantic ExecutionContext) ---")

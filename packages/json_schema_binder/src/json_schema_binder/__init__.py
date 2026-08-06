@@ -51,8 +51,6 @@ def resolve_variables(
     context: Union[BindingContext, Mapping[str, Any]],
     engine: Union[str, BaseBindingEngine] = "jmespath",
     target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
-    fallback_mapper: Optional[Any] = None,
-    directive: Optional[str] = None,
 ) -> Any:
     """
     Convenience function to resolve variable expressions ($var...) in a template payload.

@@ -32,7 +32,6 @@ def format_exception(e: BaseException) -> str:
 async def run_single_test(
     tc: TestCase,
     binding_type: str = "jmespath",
-    enable_llm_fallback: bool = False
 ) -> dict:
     report = {
         "id": tc.id,
@@ -58,7 +57,6 @@ async def run_single_test(
                         tc.query,
                         tools_metadata,
                         binding_type=binding_type,
-                        enable_llm_fallback=enable_llm_fallback
                     )
                     report["plan"] = plan.model_dump()
                 except Exception as plan_err:
@@ -70,7 +68,6 @@ async def run_single_test(
                 executor = HeadlessExecutor(
                     mcp_client,
                     binding_engine=binding_type,
-                    enable_llm_fallback=enable_llm_fallback
                 )
                 
                 try:
@@ -102,11 +99,7 @@ async def main():
         default="jmespath",
         help="Variable binding engine to evaluate (default: jmespath)"
     )
-    parser.add_argument(
-        "--fallback", "-f",
-        action="store_true",
-        help="Enable Automatic LLM Direct Mapping Fallback"
-    )
+
     parser.add_argument(
         "--tc", "-t",
         type=str,
@@ -123,7 +116,7 @@ async def main():
 
     print("==================================================")
     print("   Running Comprehensive Evaluation Suite         ")
-    print(f"   Engine: {args.engine.upper()} | Fallback: {args.fallback}")
+    print(f"   Engine: {args.engine.upper()}")
     print("==================================================")
 
     test_cases = TEST_SUITE.test_cases
@@ -136,7 +129,7 @@ async def main():
     results = []
     for tc in test_cases:
         print(f"\n[RUNNING] {tc.id}: {tc.name}...")
-        res = await run_single_test(tc, binding_type=args.engine, enable_llm_fallback=args.fallback)
+        res = await run_single_test(tc, binding_type=args.engine)
         results.append(res)
         print(f"[STATUS] {tc.id} -> {res['status']}")
         if res["error"]:
