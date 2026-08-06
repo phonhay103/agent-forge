@@ -1,14 +1,13 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, Optional, TypeVar, Union, Type
+from typing import Any, TypeVar
+
 from pydantic import BaseModel
 
 from json_schema_binder.models import (
-    BindingContext,
     EvaluationResult,
     MappingResult,
     MappingSpec,
-    SupportedDataType,
 )
 
 T = TypeVar("T")
@@ -20,7 +19,7 @@ class BindingType(str, Enum):
     DOT_NOTATION = "dot_notation"
 
 
-_BINDING_ENGINES_REGISTRY: Dict[str, Any] = {}
+_BINDING_ENGINES_REGISTRY: dict[str, Any] = {}
 
 
 def register_binding_engine(name: str):
@@ -49,8 +48,8 @@ class BaseBindingEngine(ABC):
     def transform(
         self,
         source_data: Any,
-        mapping_spec: Union[Dict[str, str], MappingSpec],
-        target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
+        mapping_spec: dict[str, str] | MappingSpec,
+        target_schema: dict[str, Any] | type[BaseModel] | None = None,
     ) -> MappingResult[Any]:
         """
         Transforms source_data into a target dictionary or BaseModel using a direct mapping specification.
@@ -62,7 +61,7 @@ class BaseBindingEngine(ABC):
         """Returns dynamic instructions for LLM System Prompt explaining how to format variable references."""
         pass
 
-    def get_regex_pattern(self) -> Optional[str]:
+    def get_regex_pattern(self) -> str | None:
         """Returns the official representative regex pattern for this binding engine, or None if not defined."""
         return None
 

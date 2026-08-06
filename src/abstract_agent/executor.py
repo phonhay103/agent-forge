@@ -1,15 +1,15 @@
 import json
 import logging
 import pathlib
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
-from prompt_composer import PromptComposer
 
-from src.abstract_agent.models import AbstractPlan, AbstractPlanTask
-from src.shared.mcp_protocols import MCPSessionProtocol
+from prompt_composer import PromptComposer
+from src.abstract_agent.models import AbstractPlan
 from src.shared.executor_models import ExecutionContext
 from src.shared.llm_client import run_structured_llm
+from src.shared.mcp_protocols import MCPSessionProtocol
 
 logger = logging.getLogger("abstract_agent")
 PROMPTS_DIR = pathlib.Path(__file__).parent / "prompts"
@@ -33,10 +33,10 @@ class AbstractExecutor:
     def __init__(
         self,
         session: MCPSessionProtocol,
-        model: Optional[Any] = None,
+        model: Any | None = None,
         model_name: str = "gemini-2.5-flash",
-        tool_resolver_prompt: Optional[PromptComposer] = None,
-        bind_prompt: Optional[PromptComposer] = None,
+        tool_resolver_prompt: PromptComposer | None = None,
+        bind_prompt: PromptComposer | None = None,
     ):
         self.session = session
         self.model_name = model_name
@@ -130,9 +130,9 @@ class AbstractExecutor:
     def _resolve_tool(
         self,
         intent: str,
-        expected_input: Optional[str],
-        expected_output: Optional[str],
-        available_tools: List[dict],
+        expected_input: str | None,
+        expected_output: str | None,
+        available_tools: list[dict],
     ) -> ToolSelection:
         """Use LLM to match intent to the best available tool."""
         prompt = self.tool_resolver_prompt or PromptComposer.from_file("tool_resolver_prompt.yaml", PROMPTS_DIR)
@@ -158,7 +158,7 @@ class AbstractExecutor:
         tool_name: str,
         input_schema: dict,
         intent: str,
-        expected_input: Optional[str],
+        expected_input: str | None,
         dependency_context: dict,
     ) -> dict:
         """Use LLM to generate tool arguments."""

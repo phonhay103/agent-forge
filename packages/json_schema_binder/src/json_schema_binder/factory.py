@@ -1,14 +1,10 @@
-from typing import Union
-from json_schema_binder.base import BaseBindingEngine, BindingType, _BINDING_ENGINES_REGISTRY
+
+from json_schema_binder.base import _BINDING_ENGINES_REGISTRY, BaseBindingEngine, BindingType
+
 # Import concrete engines to ensure decorator registration triggers at startup
-from json_schema_binder.engines import (
-    JMESPathBindingEngine,
-    JSONPathBindingEngine,
-    DotNotationBindingEngine,
-)
 
 
-def get_binding_engine(binding_type: Union[str, BindingType] = BindingType.JMESPATH) -> BaseBindingEngine:
+def get_binding_engine(binding_type: str | BindingType = BindingType.JMESPATH) -> BaseBindingEngine:
     """
     Factory function to retrieve an independent binding engine instance using dynamic registry.
     """

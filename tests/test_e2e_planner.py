@@ -1,13 +1,12 @@
-import asyncio
 from dotenv import load_dotenv
+
 load_dotenv()
-from httpx import AsyncClient
 from src.agent.planner import Planner
-from src.agent.executor import StaticExecutor as HeadlessExecutor
-from src.shared.test_inputs import TEST_SUITE
+
+
 async def run_e2e_test(test_id, test_query, binding_type):
     print(f"[{test_id}] Starting E2E test")
-    
+
     # Fake tools metadata
     tools_metadata = [
         {
@@ -53,15 +52,17 @@ async def run_e2e_test(test_id, test_query, binding_type):
         tools_metadata,
         binding_type=binding_type,
     )
-    
+
     print(f"[{test_id}] Plan generated with {len(plan.tasks)} tasks")
     for task in plan.tasks:
         print(f"[{test_id}] Task: {task.tool_name}, Directive: {getattr(task, 'directive', None)}")
-        
+
     return plan
 
-import pytest
 import os
+
+import pytest
+
 
 @pytest.mark.anyio
 async def test_e2e_planner_jmespath():
@@ -78,7 +79,7 @@ async def test_e2e_planner_jsonpath():
 
 def test_static_agent_injection():
     from prompt_composer import PromptComposer
-    
+
     custom_prompt = PromptComposer().set_section("test_sec", "custom template text")
     planner = Planner(prompt=custom_prompt)
     assert planner.prompt == custom_prompt

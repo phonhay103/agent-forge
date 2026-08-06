@@ -1,6 +1,9 @@
-from typing import Protocol, Any, List
-from mcp import ClientSession
+from typing import Any, Protocol
+
 from mcp.types import Tool
+
+from mcp import ClientSession
+
 
 class MCPToolWrapper:
     """
@@ -32,7 +35,7 @@ class MCPSessionProtocol(Protocol):
     """
     Protocol for MCP Client Session using wrapped tool types.
     """
-    async def list_tools(self, *args: Any, **kwargs: Any) -> List[MCPToolWrapper]:
+    async def list_tools(self, *args: Any, **kwargs: Any) -> list[MCPToolWrapper]:
         ...
 
     async def call_tool(self, name: str, arguments: dict, *args: Any, **kwargs: Any) -> Any:
@@ -46,7 +49,7 @@ class MCPClient:
     def __init__(self, session: ClientSession):
         self._session = session
 
-    async def list_tools(self, *args: Any, **kwargs: Any) -> List[MCPToolWrapper]:
+    async def list_tools(self, *args: Any, **kwargs: Any) -> list[MCPToolWrapper]:
         result = await self._session.list_tools(*args, **kwargs)
         if result and getattr(result, "tools", None):
             return [MCPToolWrapper(t) for t in result.tools]

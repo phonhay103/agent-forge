@@ -1,7 +1,9 @@
 import re
-from typing import List, Any, Optional, Dict, Union
-from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
+
 
 class BindingType(str, Enum):
     DOT = "dot"
@@ -12,7 +14,7 @@ class DynamicBindingMode(str, Enum):
     JMESPATH_VALIDATE = "jmespath_validate"
     LLM_DIRECT = "llm_direct"
 
-def _validate_args_pattern_helper(v: Optional[Dict[str, Any]], info: ValidationInfo) -> Optional[Dict[str, Any]]:
+def _validate_args_pattern_helper(v: dict[str, Any] | None, info: ValidationInfo) -> dict[str, Any] | None:
     if v is None:
         return v
     regex_pattern = info.context.get("regex_pattern") if info.context else None
@@ -39,27 +41,27 @@ def _validate_args_pattern_helper(v: Optional[Dict[str, Any]], info: ValidationI
 class StaticPlanTask(BaseModel):
     id: str = Field(description="Unique identifier for the task, e.g., 'search_products'")
     tool_name: str = Field(description="Name of the MCP tool to execute")
-    args: Optional[Dict[str, Union[str, int, float, bool, List[Any], Dict[str, Any]]]] = Field(
+    args: dict[str, str | int | float | bool | list[Any] | dict[str, Any]] | None = Field(
         default=None,
         description="Direct tool arguments matching the expected parameters, where each value is either a literal primitive (string/number/bool), a nested object/array, or a variable binding string starting with '$' (e.g., '$task_search_products.items')"
     )
-    depends_on: List[str] = Field(
+    depends_on: list[str] = Field(
         default_factory=list,
         description="List of task IDs whose outputs this task depends on"
     )
-    reason: Optional[str] = Field(
+    reason: str | None = Field(
         default=None,
         description="The reasoning or purpose behind this execution step"
     )
 
     @field_validator("args")
     @classmethod
-    def validate_args_pattern(cls, v: Optional[Dict[str, Any]], info: ValidationInfo) -> Optional[Dict[str, Any]]:
+    def validate_args_pattern(cls, v: dict[str, Any] | None, info: ValidationInfo) -> dict[str, Any] | None:
         return _validate_args_pattern_helper(v, info)
 
 class StaticPlan(BaseModel):
-    tasks: List[StaticPlanTask] = Field(description="Ordered list of tasks to execute sequentially")
-    reason: Optional[str] = Field(
+    tasks: list[StaticPlanTask] = Field(description="Ordered list of tasks to execute sequentially")
+    reason: str | None = Field(
         default=None,
         description="Overall explanation of the plan strategy, routing path, and tool choices"
     )
@@ -67,30 +69,30 @@ class StaticPlan(BaseModel):
 class DynamicPlanTask(BaseModel):
     id: str = Field(description="Unique identifier for the task, e.g., 'search_products'")
     tool_name: str = Field(description="Name of the MCP tool to execute")
-    input_description: Optional[str] = Field(
+    input_description: str | None = Field(
         default=None,
         description="Natural language description of input data needed"
     )
-    output_description: Optional[str] = Field(
+    output_description: str | None = Field(
         default=None,
         description="Natural language description of output produced"
     )
-    args_jmespath: Optional[str] = Field(
+    args_jmespath: str | None = Field(
         default=None,
         description="Pre-planned JMESPath mapping path, or null if schema is missing or not applicable"
     )
-    depends_on: List[str] = Field(
+    depends_on: list[str] = Field(
         default_factory=list,
         description="List of task IDs whose outputs this task depends on"
     )
-    reason: Optional[str] = Field(
+    reason: str | None = Field(
         default=None,
         description="The reasoning or purpose behind this execution step"
     )
 
 class DynamicPlan(BaseModel):
-    tasks: List[DynamicPlanTask] = Field(description="Ordered list of tasks to execute sequentially")
-    reason: Optional[str] = Field(
+    tasks: list[DynamicPlanTask] = Field(description="Ordered list of tasks to execute sequentially")
+    reason: str | None = Field(
         default=None,
         description="Overall explanation of the plan strategy, routing path, and tool choices"
     )
@@ -98,44 +100,44 @@ class DynamicPlan(BaseModel):
 class UnifiedPlanTask(BaseModel):
     id: str = Field(description="Unique identifier for the task, e.g., 'search_products'")
     tool_name: str = Field(description="Name of the MCP tool to execute")
-    
+
     # Static mode fields
-    args: Optional[Dict[str, Union[str, int, float, bool, List[Any], Dict[str, Any]]]] = Field(
+    args: dict[str, str | int | float | bool | list[Any] | dict[str, Any]] | None = Field(
         default=None,
         description="Direct tool arguments matching the expected parameters, where each value is either a literal primitive (string/number/bool), a nested object/array, or a variable binding string starting with '$' (e.g., '$task_search_products.items')"
     )
     # Dynamic/hybrid mode fields
-    input_description: Optional[str] = Field(
+    input_description: str | None = Field(
         default=None,
         description="Natural language description of input data needed"
     )
-    output_description: Optional[str] = Field(
+    output_description: str | None = Field(
         default=None,
         description="Natural language description of output produced"
     )
-    args_jmespath: Optional[str] = Field(
+    args_jmespath: str | None = Field(
         default=None,
         description="Pre-planned JMESPath mapping path, or null if schema is missing or not applicable"
     )
 
     # General fields
-    depends_on: List[str] = Field(
+    depends_on: list[str] = Field(
         default_factory=list,
         description="List of task IDs whose outputs this task depends on"
     )
-    reason: Optional[str] = Field(
+    reason: str | None = Field(
         default=None,
         description="The reasoning or purpose behind this execution step"
     )
 
     @field_validator("args")
     @classmethod
-    def validate_args_pattern(cls, v: Optional[Dict[str, Any]], info: ValidationInfo) -> Optional[Dict[str, Any]]:
+    def validate_args_pattern(cls, v: dict[str, Any] | None, info: ValidationInfo) -> dict[str, Any] | None:
         return _validate_args_pattern_helper(v, info)
 
 class UnifiedPlan(BaseModel):
-    tasks: List[UnifiedPlanTask] = Field(description="Ordered list of tasks to execute sequentially")
-    reason: Optional[str] = Field(
+    tasks: list[UnifiedPlanTask] = Field(description="Ordered list of tasks to execute sequentially")
+    reason: str | None = Field(
         default=None,
         description="Overall explanation of the plan strategy, routing path, and tool choices"
     )

@@ -1,8 +1,10 @@
-from typing import Any, Dict, List, Optional, Union, TypeVar, Generic, Type, Mapping
-from pydantic import BaseModel, Field, ConfigDict
+from collections.abc import Mapping
+from typing import Any, Generic, TypeVar, Union
+
+from pydantic import BaseModel, ConfigDict, Field
 
 PrimitiveType = Union[str, int, float, bool, bytes, None]
-ComplexType = Union[Dict[str, Any], List[Any], BaseModel]
+ComplexType = Union[dict[str, Any], list[Any], BaseModel]
 SupportedDataType = Union[PrimitiveType, ComplexType]
 
 T = TypeVar("T")
@@ -14,11 +16,11 @@ class BindingContext(BaseModel):
     """
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    data: Dict[str, SupportedDataType] = Field(
+    data: dict[str, SupportedDataType] = Field(
         default_factory=dict,
         description="Source data namespaces or root objects."
     )
-    metadata: Dict[str, SupportedDataType] = Field(
+    metadata: dict[str, SupportedDataType] = Field(
         default_factory=dict,
         description="Optional metadata or schema store."
     )
@@ -44,7 +46,7 @@ class MappingSpec(BaseModel):
     """
     Direct mapping specification binding target field names to expression strings.
     """
-    field_mappings: Dict[str, str] = Field(
+    field_mappings: dict[str, str] = Field(
         default_factory=dict,
         description="Map of target_field -> expression_string (e.g. {'amount': 'inventory.total_value'})"
     )
@@ -60,7 +62,7 @@ class EvaluationResult(BaseModel, Generic[T]):
     expression: str = Field(description="The evaluated expression string.")
     is_success: bool = Field(description="True if evaluation succeeded.")
     engine: str = Field(description="Binding engine used.")
-    error: Optional[str] = Field(default=None, description="Error message if evaluation failed.")
+    error: str | None = Field(default=None, description="Error message if evaluation failed.")
 
 
 class MappingResult(BaseModel, Generic[T]):
@@ -72,8 +74,8 @@ class MappingResult(BaseModel, Generic[T]):
     output: T = Field(description="The mapped and schema-validated output.")
     is_success: bool = Field(description="True if mapping succeeded.")
     engine: str = Field(description="Binding engine used.")
-    unresolved_expressions: List[str] = Field(
+    unresolved_expressions: list[str] = Field(
         default_factory=list,
         description="List of expressions that failed to evaluate or match."
     )
-    errors: List[str] = Field(default_factory=list, description="Any evaluation or validation errors.")
+    errors: list[str] = Field(default_factory=list, description="Any evaluation or validation errors.")

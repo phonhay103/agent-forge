@@ -1,8 +1,9 @@
 import json
 import re
-from typing import List, Dict, Any, Set
+from typing import Any
 
-def _extract_task_references(args: Any) -> Set[str]:
+
+def _extract_task_references(args: Any) -> set[str]:
     """Extract all $task_xxx references from args recursively."""
     refs = set()
     if isinstance(args, str):
@@ -16,7 +17,7 @@ def _extract_task_references(args: Any) -> Set[str]:
             refs.update(_extract_task_references(item))
     return refs
 
-def _simplify_schema(schema: Dict[str, Any], max_depth: int = 2) -> Dict[str, Any]:
+def _simplify_schema(schema: dict[str, Any], max_depth: int = 2) -> dict[str, Any]:
     """Simplify a JSON schema into a human-readable summary of key: type."""
     if not schema or not isinstance(schema, dict):
         return {}
@@ -49,18 +50,18 @@ def _format_json_indented(data: Any, indent: int = 4) -> str:
 
 def format_plan_display(
     plan: Any,
-    tools_metadata: List[Dict[str, Any]],
+    tools_metadata: list[dict[str, Any]],
     binding_type: str = "jmespath",
 ) -> str:
     # Check if this is a dynamic/hybrid plan
     is_dynamic = any(
-        getattr(task, "input_description", None) is not None or getattr(task, "args_jmespath", None) is not None 
+        getattr(task, "input_description", None) is not None or getattr(task, "args_jmespath", None) is not None
         for task in plan.tasks
     )
 
     if is_dynamic:
         total = len(plan.tasks)
-        lines: List[str] = []
+        lines: list[str] = []
 
         lines.append("\u2554" + "\u2550" * 62 + "\u2557")
         lines.append("\u2551" + "            \U0001f4cb DYNAMIC EXECUTION PLAN                       " + "\u2551")
@@ -96,7 +97,7 @@ def format_plan_display(
                 deps = ", ".join(task.depends_on)
                 lines.append(f"\u2502    Depends on: {deps}")
             else:
-                lines.append(f"\u2502    Source: User Input (no dependencies)")
+                lines.append("\u2502    Source: User Input (no dependencies)")
 
             if getattr(task, "args_jmespath", None):
                 lines.append(f"\u2502    Planned JMESPath: {task.args_jmespath}")
@@ -109,13 +110,13 @@ def format_plan_display(
         return "\n".join(lines)
 
     else:
-        tools_map: Dict[str, Dict[str, Any]] = {}
+        tools_map: dict[str, dict[str, Any]] = {}
         for t in tools_metadata:
             name = t.get("name", "")
             tools_map[name] = t
 
         total = len(plan.tasks)
-        lines: List[str] = []
+        lines: list[str] = []
 
         # Header
         lines.append("╔══════════════════════════════════════════════════════════════╗")

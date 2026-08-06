@@ -1,11 +1,12 @@
-import pytest
 from unittest.mock import MagicMock
+
 from src.agent.binder import (
-    generate_schema,
-    DynamicDataBinder as DynamicJMESPathBinder,
     DataMappingPath as JMESPathMapping,
-    schemas_match
+    DynamicDataBinder as DynamicJMESPathBinder,
+    generate_schema,
+    schemas_match,
 )
+
 
 def test_generate_schema_primitives():
     assert generate_schema("hello") == {"type": "string"}
@@ -207,11 +208,11 @@ def test_bind_with_fallback_schema_mismatch():
 
 def test_normalize_jmespath():
     from src.agent.binder import normalize_jmespath
-    
+
     # Case 1: JSON double-quoted keys and double-quoted backticked string literal
     expr1 = '{"input":{"products":apply_discount.products,"target_currency":"`EUR`"}}'
     assert normalize_jmespath(expr1) == '{input:{products:apply_discount.products,target_currency: `"EUR"`}}'
-    
+
     # Case 2: Number literal wrapped in quotes and backticks
     expr2 = '{"limit": "`5`"}'
     assert normalize_jmespath(expr2) == '{limit: `5`}'
@@ -223,7 +224,7 @@ def test_normalize_jmespath():
     # Case 4: Nested JSON literal (keys inside backticks must not be stripped of quotes)
     expr4 = '{"input": `{"network_name": "GlobalSupplyNet", "version": 1.0}`}'
     assert normalize_jmespath(expr4) == '{input: `{"network_name": "GlobalSupplyNet", "version": 1.0}`}'
-    
+
     # Case 5: Entire expression is a JSON literal
     expr5 = '`{"input": {"network_name": "Global"}}`'
     assert normalize_jmespath(expr5) == '`{"input": {"network_name": "Global"}}`'

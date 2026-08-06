@@ -1,5 +1,5 @@
 import re
-from typing import Any, List
+from typing import Any
 
 # Match variable reference prefix (e.g., "$var_1", "$step_1", "$var_name")
 VAR_REF_RE = re.compile(r"^\$[a-zA-Z0-9_]+")
@@ -34,11 +34,11 @@ class VariableParser:
         return False
 
     @classmethod
-    def extract_unresolved_references(cls, v: Any) -> List[str]:
+    def extract_unresolved_references(cls, v: Any) -> list[str]:
         """
         Recursively collects all unresolved variable reference strings in a payload.
         """
-        unresolved: List[str] = []
+        unresolved: list[str] = []
         if cls.is_variable_reference(v):
             unresolved.append(str(v))
         elif isinstance(v, dict):

@@ -1,18 +1,17 @@
 from dataclasses import dataclass
-from typing import List, Optional
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
 
 from json_schema_binder import (
-    resolve_variables,
-    evaluate_expression,
-    transform_schema,
-    get_binding_engine,
-    register_binding_engine,
     BaseBindingEngine,
-    BindingType,
     BindingContext,
+    BindingType,
     EvaluationResult,
     MappingResult,
+    evaluate_expression,
+    get_binding_engine,
+    register_binding_engine,
+    resolve_variables,
 )
 
 

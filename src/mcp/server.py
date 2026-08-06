@@ -8,6 +8,7 @@ To run this server standalone:
 """
 
 from fastmcp import FastMCP
+
 import src.mcp.tools.business_tools as tools
 from src.mcp.schema.models import *
 

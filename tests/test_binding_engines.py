@@ -1,11 +1,10 @@
 from json_schema_binder import (
-    get_binding_engine,
     BindingType,
+    DotNotationBindingEngine,
     JMESPathBindingEngine,
     JSONPathBindingEngine,
-    DotNotationBindingEngine,
+    get_binding_engine,
 )
-from src.mcp.schema.models import SupplyChainOutput, RegionSummary, BlockSummary
 
 
 def test_factory_creation():

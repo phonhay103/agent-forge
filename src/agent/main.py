@@ -1,18 +1,18 @@
 import asyncio
 import os
 import sys
-from typing import Optional
+
 from dotenv import load_dotenv
-from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
-from src.agent.planner import StaticPlanner, DynamicPlanner
-from src.agent.models import UnifiedPlan, DynamicBindingMode
-from src.agent.executor import StaticExecutor, DynamicExecutor
+from mcp import ClientSession
+from src.agent.executor import DynamicExecutor, StaticExecutor
+from src.agent.models import DynamicBindingMode, UnifiedPlan
 from src.agent.plan_display import format_plan_display
+from src.agent.planner import DynamicPlanner, StaticPlanner
+from src.shared.executor_models import ExecutionContext
 from src.shared.mcp_protocols import MCPClient
 from src.shared.test_inputs import TEST_SUITE
-from src.shared.executor_models import ExecutionContext
 
 MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://127.0.0.1:8000/mcp")
 
@@ -23,7 +23,7 @@ def format_exception(e: BaseException) -> str:
     return f"{type(e).__name__}: {e}"
 
 
-async def run_unified_agent(dynamic_binding_mode: Optional[DynamicBindingMode], mode_title: str):
+async def run_unified_agent(dynamic_binding_mode: DynamicBindingMode | None, mode_title: str):
     load_dotenv()
 
     print("==================================================")
@@ -60,11 +60,11 @@ async def run_unified_agent(dynamic_binding_mode: Optional[DynamicBindingMode], 
             binding_type = "jsonpath"
         elif engine_choice == "3":
             binding_type = "dot_notation"
-        
+
         print(f"Selected Binding Engine: {binding_type.upper()}\n")
 
     print(f"\n--- Connecting to MCP Server at {MCP_SERVER_URL} ---")
-    
+
     try:
         async with streamablehttp_client(MCP_SERVER_URL) as (read, write, _):
             async with ClientSession(read, write) as session:

@@ -1,5 +1,6 @@
+
 from pydantic import BaseModel, Field
-from typing import List
+
 
 class TestCase(BaseModel):
     __test__ = False
@@ -12,7 +13,7 @@ class TestCase(BaseModel):
 class TestSuite(BaseModel):
     __test__ = False
     suite_name: str = "MCP Core Planner & Engine Test Suite"
-    test_cases: List[TestCase]
+    test_cases: list[TestCase]
 
 TEST_SUITE = TestSuite(
     test_cases=[

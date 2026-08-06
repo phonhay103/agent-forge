@@ -1,9 +1,13 @@
 import json
 import logging
-from typing import Any, Dict, Callable, Optional, Protocol
+from collections.abc import Callable
+from typing import Any, Protocol
+
 from pydantic import BaseModel, Field, model_validator
-from json_schema_binder.engines.jmespath_engine import normalize_jmespath
+
 from json_schema_binder import get_binding_engine
+from json_schema_binder.engines.jmespath_engine import normalize_jmespath
+
 
 class BindingEngineProtocol(Protocol):
     def evaluate(self, expression: str, source_data: Any) -> Any:
@@ -18,7 +22,7 @@ class DataMappingPath(BaseModel):
         default="",
         description="A single, valid JMESPath expression that compiles and transforms the source context data into an object matching the target schema."
     )
-    jmespath_expression: Optional[str] = Field(
+    jmespath_expression: str | None = Field(
         default=None,
         description="Deprecated/backward-compatible field name."
     )
@@ -34,7 +38,7 @@ class DataMappingPath(BaseModel):
         return data
 
 
-def generate_schema(val: Any) -> Dict[str, Any]:
+def generate_schema(val: Any) -> dict[str, Any]:
     """Recursively generates a standard JSON Schema from a Python object."""
     if isinstance(val, dict):
         properties = {}
@@ -99,8 +103,8 @@ class DynamicDataBinder:
     """
     def __init__(
         self,
-        llm_runner: Callable[[Dict[str, Any], Any], Any],
-        binding_engine: Optional[BindingEngineProtocol] = None,
+        llm_runner: Callable[[dict[str, Any], Any], Any],
+        binding_engine: BindingEngineProtocol | None = None,
     ):
         """
         Args:
@@ -114,9 +118,9 @@ class DynamicDataBinder:
     def bind_dynamically(
         self,
         intent: str,
-        source_data: Dict[str, Any],
-        target_schema: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        source_data: dict[str, Any],
+        target_schema: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         1. Auto-generates JSON Schema for actual source_data.
         2. Uses LLM runner to map source schema to target schema and output a JMESPath mapping path.
@@ -142,7 +146,7 @@ class DynamicDataBinder:
             path_expr = str(result)
 
         path_expr = path_expr.strip()
-        
+
         # Clean any accidental markdown codeblock wrappers
         if path_expr.startswith("```"):
             lines = path_expr.splitlines()
@@ -178,9 +182,9 @@ class DynamicDataBinder:
     def bind(
         self,
         intent: str,
-        source_data: Dict[str, Any],
-        target_schema: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        source_data: dict[str, Any],
+        target_schema: dict[str, Any],
+    ) -> dict[str, Any]:
         """Legacy compatibility wrapper for bind_dynamically."""
         return self.bind_dynamically(
             intent=intent,
@@ -191,11 +195,11 @@ class DynamicDataBinder:
     def bind_with_validation(
         self,
         intent: str,
-        source_data: Dict[str, Any],
-        target_schema: Dict[str, Any],
-        planned_path: Optional[str] = None,
-        expected_source_schema: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        source_data: dict[str, Any],
+        target_schema: dict[str, Any],
+        planned_path: str | None = None,
+        expected_source_schema: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Attempts to use planned_path if expected_source_schema matches the runtime actual schema.
         Otherwise triggers dynamic path generation via LLM.
@@ -233,11 +237,11 @@ class DynamicDataBinder:
     def bind_with_fallback(
         self,
         intent: str,
-        source_data: Dict[str, Any],
-        target_schema: Dict[str, Any],
-        planned_jmespath: Optional[str] = None,
-        expected_source_schema: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        source_data: dict[str, Any],
+        target_schema: dict[str, Any],
+        planned_jmespath: str | None = None,
+        expected_source_schema: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Legacy compatibility wrapper mapping to bind_with_validation."""
         return self.bind_with_validation(
             intent=intent,
@@ -250,14 +254,14 @@ class DynamicDataBinder:
     def bind_directly(
         self,
         intent: str,
-        source_data: Dict[str, Any],
-        target_schema: Dict[str, Any],
-        model: Optional[Any] = None,
+        source_data: dict[str, Any],
+        target_schema: dict[str, Any],
+        model: Any | None = None,
         model_name: str = "gemini-2.5-flash",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Use LLM directly to resolve tool arguments fitting the target schema without JMESPath."""
-        from src.shared.llm_client import run_structured_llm
         from prompt_composer import PromptComposer
+        from src.shared.llm_client import run_structured_llm
 
         prompt = PromptComposer(
             template="""You are a Schema-Conforming Data Mapper.

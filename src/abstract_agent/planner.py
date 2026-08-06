@@ -1,9 +1,7 @@
-import json
 import pathlib
-from typing import List, Any, Optional
+from typing import Any
 
 from prompt_composer import PromptComposer
-
 from src.abstract_agent.models import AbstractPlan
 from src.shared.llm_client import run_structured_llm
 
@@ -16,7 +14,7 @@ class AbstractPlanner:
     Does NOT select specific tools — runtime handles that.
     """
 
-    def __init__(self, model: Optional[Any] = None, model_name: str = "gemini-2.5-flash", prompt: Optional[PromptComposer] = None):
+    def __init__(self, model: Any | None = None, model_name: str = "gemini-2.5-flash", prompt: PromptComposer | None = None):
         self.model = model
         self.model_name = model_name
         self.prompt = prompt
@@ -24,7 +22,7 @@ class AbstractPlanner:
     def create_plan(
         self,
         user_query: str,
-        available_tools_metadata: List[Any],
+        available_tools_metadata: list[Any],
     ) -> AbstractPlan:
         prompt = self.prompt or PromptComposer.from_file("abstract_planner_prompt.yaml", PROMPTS_DIR)
         capabilities = self._summarize_capabilities(available_tools_metadata)
@@ -41,7 +39,7 @@ class AbstractPlanner:
         )
         return plan_obj
 
-    def _summarize_capabilities(self, tools_metadata: List[Any]) -> str:
+    def _summarize_capabilities(self, tools_metadata: list[Any]) -> str:
         """Create a high-level summary of available capabilities without exposing full tool schemas."""
         summaries = []
         for t in tools_metadata:

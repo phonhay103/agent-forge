@@ -1,7 +1,10 @@
-from unittest.mock import patch, MagicMock
 import os
+from unittest.mock import patch
+
 import pytest
+
 from src.shared.llm_client import get_llm_client
+
 
 def test_get_llm_client_google_genai():
     # Clear cache to ensure tests run with mock environments

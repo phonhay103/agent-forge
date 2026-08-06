@@ -1,22 +1,28 @@
-import anyio
-import asyncio
-import json
 import logging
 import sys
-import os
 from pathlib import Path
+
+import anyio
+
 sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
 
 from mcp import ClientSession
-from src.mcp.schema.models import (
-    SupplyChainInput, NetworkMetadata, RegionNode, WarehouseBlock,
-    ManagerInfo, ContactDetail, AisleStorage, ItemBatch, ItemSpec
-)
-from src.agent.models import Plan, PlanTask as PlanStep
 from src.agent.executor import StaticExecutor as HeadlessExecutor
+from src.agent.main import MCP_SERVER_URL
+from src.agent.models import Plan, PlanTask as PlanStep
+from src.mcp.schema.models import (
+    AisleStorage,
+    ContactDetail,
+    ItemBatch,
+    ItemSpec,
+    ManagerInfo,
+    NetworkMetadata,
+    RegionNode,
+    SupplyChainInput,
+    WarehouseBlock,
+)
 from src.shared.executor_models import ExecutionContext
 from src.shared.mcp_protocols import MCPClient
-from src.agent.main import MCP_SERVER_URL
 
 # Configure logging to see the optimized execution steps and lru_caches in action
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -76,11 +82,12 @@ def make_complex_supply_chain_input() -> dict:
 
 import pytest
 
+
 @pytest.mark.anyio
 async def test_complex_pipeline():
     logger.info(f"Connecting to live MCP server at {MCP_SERVER_URL} over Streamable HTTP...")
     from mcp.client.streamable_http import streamablehttp_client
-    
+
     try:
         async with streamablehttp_client(MCP_SERVER_URL) as (read, write, _):
             async with ClientSession(read, write) as session:
@@ -146,7 +153,7 @@ async def test_complex_pipeline():
                 step_1_res = execution_context.store["task_1"]
                 assert step_1_res["network_name"] == "Global Enterprise Tech Logistics"
                 assert len(step_1_res["region_summaries"]) == 1
-                
+
                 block_summary = step_1_res["region_summaries"][0]["block_summaries"][0]
                 assert block_summary["block_id"] == "BLK-A1-PREMIUM"
                 assert block_summary["total_value"] == 7000.0

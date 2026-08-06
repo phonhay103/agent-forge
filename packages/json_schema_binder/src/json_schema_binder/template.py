@@ -1,11 +1,11 @@
 import re
-from typing import Any, Dict, List, Optional, TypeVar, Union, Type
+from typing import Any, TypeVar
+
 from pydantic import BaseModel
 
 from json_schema_binder.base import BaseBindingEngine
 from json_schema_binder.factory import get_binding_engine
 from json_schema_binder.models import BindingContext
-from json_schema_binder.parser import VariableParser
 
 T = TypeVar("T")
 
@@ -15,7 +15,7 @@ class TemplateResolver:
     Decoupled utility for parsing template payloads containing variable expressions (e.g. '$user.name')
     and delegating evaluation directly to a binding engine's evaluate() method.
     """
-    def __init__(self, engine: Union[str, BaseBindingEngine] = "jmespath"):
+    def __init__(self, engine: str | BaseBindingEngine = "jmespath"):
         self.engine = get_binding_engine(engine) if isinstance(engine, str) else engine
 
     def resolve_payload(self, payload: T, source_data: Any) -> T:

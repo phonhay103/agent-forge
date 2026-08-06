@@ -21,6 +21,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
+    "ruff>=0.3.0",
+    "mypy>=1.9.0",
 ]
 
 [tool.uv.workspace]
@@ -29,3 +31,91 @@ members = ["packages/*"]
 [tool.uv.sources]
 json-schema-binder = { workspace = true }
 prompt-composer = { workspace = true }
+
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "UP",    # pyupgrade
+    "ARG",   # flake8-unused-arguments
+    "ANN",   # flake8-annotations (ngăn chặn Any qua ANN401)
+    "S",     # flake8-bandit (bảo mật)
+    "SIM",   # flake8-simplify (tối ưu hóa logic)
+    "RUF",   # Ruff specific rules
+]
+ignore = [
+    "ANN002", # Không bắt buộc định kiểu cho *args
+    "ANN003", # Không bắt buộc định kiểu cho **kwargs
+    
+    # --- Giải quyết xung đột với Formatter ---
+    "COM812", # Bỏ qua cảnh báo thiếu dấu phẩy đuôi (để formatter tự xử lý)
+    "ISC002", # Bỏ qua cảnh báo nối chuỗi ẩn
+]
+
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = false
+ignore-fully-untyped = false
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ["prompt_composer", "json_schema_binder"]
+
+[tool.ruff.lint.per-file-ignores]
+# Cho phép dùng assert trong kiểm thử, nới lỏng định kiểu
+"tests/**/*.py" = ["S101", "ANN", "ARG"]
+"packages/*/tests/**/*.py" = ["S101", "ANN", "ARG"]
+
+# Bảo vệ các tệp khởi tạo gói khỏi việc tự động xóa import xuất khẩu
+"__init__.py" = ["F401"]
+
+# Nới lỏng kiểm tra cho các tệp legacy của prompt_composer để giữ CI xanh
+"packages/prompt_composer/src/prompt_composer/formats/**/*.py" = ["ANN", "ARG002", "B905"]
+"packages/prompt_composer/src/prompt_composer/parsers/**/*.py" = ["ANN"]
+"packages/prompt_composer/src/prompt_composer/composer.py" = ["ANN"]
+"packages/prompt_composer/src/prompt_composer/section.py" = ["ANN", "S105", "SIM108"]
+"packages/prompt_composer/templates/**/*.py" = ["ANN"]
+
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+disallow_any_explicit = true  # Ngăn chặn sử dụng Any một cách tường minh
+ignore_missing_imports = true
+exclude = [
+    "tests",
+    "packages/prompt_composer/tests",
+]
+
+[[tool.mypy.overrides]]
+module = "json_schema_binder.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "shared.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "executor.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "abstract_agent.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "agent.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "mcp.*"
+ignore_errors = true
+

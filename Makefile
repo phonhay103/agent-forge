@@ -1,6 +1,6 @@
 export PYTHONPATH := .
 
-.PHONY: help install test eval eval-jsonpath eval-dot server agent clean
+.PHONY: help install test eval eval-jsonpath eval-dot server agent clean lint format
 
 # Default target
 .DEFAULT_GOAL := help
@@ -29,8 +29,16 @@ agent-dynamic: ## Run Dynamic Binding Agent directly
 agent-abstract: ## Run Abstract Planning Agent directly
 	uv run python -m src.abstract_agent
 
-test: ## Run unit tests with pytest
-	PYTHONPATH=. uv run python -m pytest tests/
+lint: ## Run lint checks with Ruff (with auto-fix) and MyPy on the rendering engine
+	uv run ruff check --fix packages/prompt_composer/src/prompt_composer/renderers/
+	uv run mypy packages/prompt_composer/src/prompt_composer/renderers/
+
+format: ## Format code using Ruff formatter on the rendering engine
+	uv run ruff format packages/prompt_composer/src/prompt_composer/renderers/
+
+test: ## Run all unit tests with pytest
+	PYTHONPATH=. uv run pytest tests/
+	cd packages/prompt_composer && uv run pytest tests/
 
 eval: ## Run evaluation suite with default engine (jmespath)
 	uv run python scripts/evaluate_all.py

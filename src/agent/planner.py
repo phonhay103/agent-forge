@@ -1,12 +1,11 @@
-from typing import List, Any, Union, Optional
-from json_schema_binder import BaseBindingEngine, get_binding_engine
-from pydantic import BaseModel, Field
 import json
-import pathlib
 import os
+import pathlib
+from typing import Any
 
-from src.agent.models import UnifiedPlan, StaticPlan, DynamicPlan
+from json_schema_binder import BaseBindingEngine, get_binding_engine
 from prompt_composer import PromptComposer
+from src.agent.models import DynamicPlan, StaticPlan, UnifiedPlan
 from src.shared.llm_client import run_structured_llm
 
 DEFAULT_BINDING_FAILED_TOKEN = os.getenv("BINDING_FAILED_TOKEN", "__BINDING_FAILED__")
@@ -16,10 +15,10 @@ PROMPTS_DIR = pathlib.Path(__file__).parent / "prompts"
 class StaticPlanner:
     def __init__(
         self,
-        model: Optional[Any] = None,
+        model: Any | None = None,
         model_name: str = "gemini-3.5-flash",
-        binding_failed_token: Optional[str] = None,
-        prompt: Optional[PromptComposer] = None,
+        binding_failed_token: str | None = None,
+        prompt: PromptComposer | None = None,
     ):
         self.model = model
         self.model_name = model_name
@@ -29,8 +28,8 @@ class StaticPlanner:
     def create_plan(
         self,
         user_query: str,
-        available_tools_metadata: List[Any],
-        binding_type: Union[str, BaseBindingEngine] = "jmespath",
+        available_tools_metadata: list[Any],
+        binding_type: str | BaseBindingEngine = "jmespath",
     ) -> UnifiedPlan:
         engine = get_binding_engine(binding_type) if isinstance(binding_type, str) else binding_type
         binding_instruction = engine.get_system_prompt_instruction()
@@ -42,7 +41,7 @@ class StaticPlanner:
         prompt.set_variable("available_tools", json.dumps(available_tools_metadata, indent=2))
         prompt.set_variable("binding_instruction", binding_instruction)
         prompt.set_variable("binding_failed_token", self.binding_failed_token)
-        
+
         prompt_text = prompt.render()
 
         plan_obj: StaticPlan = run_structured_llm(
@@ -65,9 +64,9 @@ class StaticPlanner:
 class DynamicPlanner:
     def __init__(
         self,
-        model: Optional[Any] = None,
+        model: Any | None = None,
         model_name: str = "gemini-2.5-flash",
-        prompt: Optional[PromptComposer] = None,
+        prompt: PromptComposer | None = None,
     ):
         self.model = model
         self.model_name = model_name
@@ -76,7 +75,7 @@ class DynamicPlanner:
     def create_plan(
         self,
         user_query: str,
-        available_tools_metadata: List[Any],
+        available_tools_metadata: list[Any],
     ) -> UnifiedPlan:
         prompt = self.prompt or PromptComposer.from_file("planner_prompt.yaml", PROMPTS_DIR)
         if "static_binding_rules" in prompt._sections:

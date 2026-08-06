@@ -1,11 +1,32 @@
 # Unit tests for nested tools
 from src.mcp.schema.models import (
-    SupplyChainInput, NetworkMetadata, RegionNode, WarehouseBlock,
-    ManagerInfo, ContactDetail, AisleStorage, ItemBatch, ItemSpec,
-    OrgStructureInput, CompanyProfile, Address, DivisionNode, TeamUnit,
-    TeamLead, ProjectDetail, TaskNode, AssigneeProfile,
-    CurriculumInput, ProgramMeta, AccreditationInfo, AcademicYearNode,
-    CourseModule, InstructorProfile, ClassSection, ScheduleSlot, LocationDetail
+    AcademicYearNode,
+    AccreditationInfo,
+    Address,
+    AisleStorage,
+    AssigneeProfile,
+    ClassSection,
+    CompanyProfile,
+    ContactDetail,
+    CourseModule,
+    CurriculumInput,
+    DivisionNode,
+    InstructorProfile,
+    ItemBatch,
+    ItemSpec,
+    LocationDetail,
+    ManagerInfo,
+    NetworkMetadata,
+    OrgStructureInput,
+    ProgramMeta,
+    ProjectDetail,
+    RegionNode,
+    ScheduleSlot,
+    SupplyChainInput,
+    TaskNode,
+    TeamLead,
+    TeamUnit,
+    WarehouseBlock,
 )
 from src.mcp.tools import business_tools as tools
 

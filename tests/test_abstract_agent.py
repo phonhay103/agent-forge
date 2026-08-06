@@ -1,9 +1,12 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from src.abstract_agent.planner import AbstractPlanner
-from src.abstract_agent.models import AbstractPlan, AbstractPlanTask
+
+import pytest
+
 from src.abstract_agent.executor import AbstractExecutor, ToolSelection
+from src.abstract_agent.models import AbstractPlan, AbstractPlanTask
+from src.abstract_agent.planner import AbstractPlanner
 from src.shared.executor_models import ExecutionContext
+
 
 def test_abstract_planner():
     planner = AbstractPlanner()
@@ -42,7 +45,7 @@ async def test_abstract_executor():
     mock_tools_response = MagicMock()
     mock_tools_response.tools = [mock_tool]
     mcp_client.list_tools = AsyncMock(return_value=mock_tools_response)
-    
+
     mock_result_content = MagicMock()
     mock_result_content.text = '{"results": ["laptop1", "laptop2"]}'
     mock_call_result = MagicMock()
@@ -50,7 +53,7 @@ async def test_abstract_executor():
     mcp_client.call_tool = AsyncMock(return_value=mock_call_result)
 
     executor = AbstractExecutor(mcp_client)
-    
+
     plan = AbstractPlan(
         tasks=[
             AbstractPlanTask(
@@ -63,14 +66,14 @@ async def test_abstract_executor():
         ],
         reason="Test plan"
     )
-    
+
     mock_tool_selection = ToolSelection(
         tool_name="search",
         confidence=0.9,
         reasoning="Matches search intent"
     )
     mock_args = {"query": "laptops"}
-    
+
     with patch.object(executor, "_resolve_tool", return_value=mock_tool_selection) as mock_resolve:
         with patch.object(executor, "_llm_bind", return_value=mock_args) as mock_bind:
             ctx: ExecutionContext = await executor.run_plan(plan)
@@ -89,10 +92,10 @@ async def test_abstract_executor():
 def test_abstract_agent_prompt_injection():
     from prompt_composer import PromptComposer
     custom_prompt = PromptComposer().set_section("test_sec", "custom template text")
-    
+
     planner = AbstractPlanner(prompt=custom_prompt)
     assert planner.prompt == custom_prompt
-    
+
     executor = AbstractExecutor(
         AsyncMock(),
         tool_resolver_prompt=custom_prompt,

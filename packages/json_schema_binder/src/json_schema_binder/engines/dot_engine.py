@@ -1,4 +1,5 @@
-from typing import Any, Dict, Optional, TypeVar, Union, Type, Mapping
+from collections.abc import Mapping
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
@@ -21,7 +22,7 @@ class DotNotationBindingEngine(BaseBindingEngine):
     def binding_type(self) -> BindingType:
         return BindingType.DOT_NOTATION
 
-    def _traverse_path(self, curr: Any, keys: list) -> Optional[Any]:
+    def _traverse_path(self, curr: Any, keys: list) -> Any | None:
         for key in keys:
             if not key:
                 continue
@@ -69,11 +70,11 @@ class DotNotationBindingEngine(BaseBindingEngine):
     def transform(
         self,
         source_data: Any,
-        mapping_spec: Union[Dict[str, str], MappingSpec],
-        target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
+        mapping_spec: dict[str, str] | MappingSpec,
+        target_schema: dict[str, Any] | type[BaseModel] | None = None,
     ) -> MappingResult[Any]:
         spec = mapping_spec.field_mappings if isinstance(mapping_spec, MappingSpec) else mapping_spec
-        output: Dict[str, Any] = {}
+        output: dict[str, Any] = {}
         unresolved: list = []
         errors: list = []
 

@@ -1,12 +1,11 @@
-from pydantic import BaseModel
 from json_schema_binder import (
-    resolve_variables,
-    get_binding_engine,
     BindingType,
+    DotNotationBindingEngine,
     JMESPathBindingEngine,
     JSONPathBindingEngine,
-    DotNotationBindingEngine,
     VariableParser,
+    get_binding_engine,
+    resolve_variables,
 )
 
 

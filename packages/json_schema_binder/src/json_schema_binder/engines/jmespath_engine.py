@@ -1,5 +1,6 @@
 import functools
-from typing import Any, Dict, Optional, TypeVar, Union, Type, Mapping
+from collections.abc import Mapping
+from typing import Any, TypeVar
 
 import jmespath
 from pydantic import BaseModel
@@ -17,6 +18,7 @@ T = TypeVar("T")
 
 import re
 
+
 @functools.lru_cache(maxsize=1024)
 def _get_compiled_jmespath(expr: str):
     return jmespath.compile(expr)
@@ -31,7 +33,7 @@ def balance_json_brackets(json_str: str) -> str:
     open_brackets = []
     in_string = False
     escape = False
-    
+
     for c in prefix:
         if escape:
             escape = False
@@ -44,24 +46,22 @@ def balance_json_brackets(json_str: str) -> str:
             continue
         if in_string:
             continue
-            
+
         if c in '{[':
             open_brackets.append(c)
         elif c in '}]':
             if not open_brackets:
                 continue
-            if c == '}' and open_brackets[-1] == '{':
+            if (c == '}' and open_brackets[-1] == '{') or (c == ']' and open_brackets[-1] == '['):
                 open_brackets.pop()
-            elif c == ']' and open_brackets[-1] == '[':
-                open_brackets.pop()
-                
+
     closing = []
     for b in reversed(open_brackets):
         if b == '{':
             closing.append('}')
         else:
             closing.append(']')
-            
+
     return prefix + ''.join(closing)
 
 
@@ -74,7 +74,7 @@ def normalize_jmespath(expr: str) -> str:
     if not expr:
         return expr
     expr = expr.strip()
-    
+
     # If the expression starts with a backtick but does not end with one, append the closing backtick.
     if expr.startswith('`') and not expr.endswith('`'):
         expr = expr + '`'
@@ -91,14 +91,14 @@ def normalize_jmespath(expr: str) -> str:
         key = match.group(1)
         val = match.group(2).strip()
         val_clean = val.strip('"\'')
-        
+
         if val_clean.lower() in ('true', 'false') or val_clean.replace('.', '', 1).isdigit():
             return f"{key}: `{val_clean}`"
         else:
             return f"{key}: `\"{val_clean}\"`"
 
     expr = re.sub(r'"?(\w+)"?:\s*"`([^`]+)`"', replacer, expr)
-    
+
     # 2. Split by backticks to process keys/identifiers only outside of literals
     parts = expr.split('`')
     for i in range(len(parts)):
@@ -108,7 +108,7 @@ def normalize_jmespath(expr: str) -> str:
         else:
             # We are inside a JSON literal; balance its brackets
             parts[i] = balance_json_brackets(parts[i])
-            
+
     return '`'.join(parts)
 
 
@@ -159,11 +159,11 @@ class JMESPathBindingEngine(BaseBindingEngine):
     def transform(
         self,
         source_data: Any,
-        mapping_spec: Union[Dict[str, str], MappingSpec],
-        target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
+        mapping_spec: dict[str, str] | MappingSpec,
+        target_schema: dict[str, Any] | type[BaseModel] | None = None,
     ) -> MappingResult[Any]:
         spec = mapping_spec.field_mappings if isinstance(mapping_spec, MappingSpec) else mapping_spec
-        output: Dict[str, Any] = {}
+        output: dict[str, Any] = {}
         unresolved: list = []
         errors: list = []
 

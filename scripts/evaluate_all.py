@@ -1,7 +1,6 @@
 import argparse
 import asyncio
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -9,16 +8,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
 
 from dotenv import load_dotenv
-from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
-from src.agent.planner import Planner
-from src.agent.models import Plan
+from mcp import ClientSession
 from src.agent.executor import StaticExecutor as HeadlessExecutor
+from src.agent.main import MCP_SERVER_URL
+from src.agent.models import Plan
+from src.agent.planner import Planner
 from src.shared.executor_models import ExecutionContext
 from src.shared.mcp_protocols import MCPClient
 from src.shared.test_inputs import TEST_SUITE, TestCase
-from src.agent.main import MCP_SERVER_URL
 
 load_dotenv()
 
@@ -43,14 +42,14 @@ async def run_single_test(
         "execution": None,
         "error": None
     }
-    
+
     try:
         async with streamablehttp_client(MCP_SERVER_URL) as (read, write, _):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools_list = await session.list_tools()
                 tools_metadata = [t.model_dump() for t in tools_list.tools]
-                
+
                 try:
                     planner = Planner()
                     plan: Plan = planner.create_plan(
@@ -63,13 +62,13 @@ async def run_single_test(
                     report["status"] = "PLANNING_ERROR"
                     report["error"] = format_exception(plan_err)
                     return report
-                
+
                 mcp_client = MCPClient(session)
                 executor = HeadlessExecutor(
                     mcp_client,
                     binding_engine=binding_type,
                 )
-                
+
                 try:
                     results: ExecutionContext = await executor.run_plan(plan)
                     report["execution"] = results.model_dump()
@@ -87,7 +86,7 @@ async def run_single_test(
         else:
             report["status"] = "ERROR"
         report["error"] = err_msg
-                
+
     return report
 
 
@@ -145,7 +144,7 @@ async def main():
     passed = sum(1 for r in results if r['status'] == 'PASSED')
     halted = sum(1 for r in results if r['status'] == 'HALTED_BY_DESIGN')
     failed = sum(1 for r in results if r['status'] in ('FAILED', 'SERVER_ERROR'))
-    
+
     print(f"Total Evaluated: {len(results)}")
     print(f"PASSED:           {passed} ({passed / len(results) * 100:.1f}%)")
     print(f"HALTED_BY_DESIGN: {halted} ({halted / len(results) * 100:.1f}%)")

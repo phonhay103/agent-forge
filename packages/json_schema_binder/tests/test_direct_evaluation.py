@@ -1,10 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
 from json_schema_binder import (
-    evaluate_expression,
-    transform_schema,
-    MappingSpec,
     EvaluationResult,
     MappingResult,
+    evaluate_expression,
+    transform_schema,
 )
 
 

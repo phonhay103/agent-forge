@@ -1,11 +1,13 @@
-from typing import Any, Dict, Optional, Union, TypeVar, Type, Mapping
+from collections.abc import Mapping
+from typing import Any, Dict, Optional, Type, TypeVar, Union
+
 from pydantic import BaseModel
 
 from json_schema_binder.base import BaseBindingEngine, BindingType, register_binding_engine
 from json_schema_binder.engines import (
+    DotNotationBindingEngine,
     JMESPathBindingEngine,
     JSONPathBindingEngine,
-    DotNotationBindingEngine,
 )
 from json_schema_binder.factory import get_binding_engine
 from json_schema_binder.models import (
@@ -24,7 +26,7 @@ T = TypeVar("T")
 def evaluate_expression(
     expression: str,
     source_data: Any,
-    engine: Union[str, BaseBindingEngine] = "jmespath",
+    engine: str | BaseBindingEngine = "jmespath",
 ) -> EvaluationResult[Any]:
     """
     Evaluates a single expression directly against source data.
@@ -35,9 +37,9 @@ def evaluate_expression(
 
 def transform_schema(
     source_data: Any,
-    mapping_spec: Union[Dict[str, str], MappingSpec],
-    engine: Union[str, BaseBindingEngine] = "jmespath",
-    target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
+    mapping_spec: dict[str, str] | MappingSpec,
+    engine: str | BaseBindingEngine = "jmespath",
+    target_schema: dict[str, Any] | type[BaseModel] | None = None,
 ) -> MappingResult[Any]:
     """
     Transforms source_data into a target payload using a direct mapping specification.
@@ -48,9 +50,9 @@ def transform_schema(
 
 def resolve_variables(
     payload: T,
-    context: Union[BindingContext, Mapping[str, Any]],
-    engine: Union[str, BaseBindingEngine] = "jmespath",
-    target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
+    context: BindingContext | Mapping[str, Any],
+    engine: str | BaseBindingEngine = "jmespath",
+    target_schema: dict[str, Any] | type[BaseModel] | None = None,
 ) -> Any:
     """
     Convenience function to resolve variable expressions ($var...) in a template payload.
@@ -65,22 +67,22 @@ def resolve_variables(
 
 __all__ = [
     "BaseBindingEngine",
+    "BindingContext",
     "BindingType",
-    "register_binding_engine",
+    "DotNotationBindingEngine",
+    "EvaluationResult",
     "JMESPathBindingEngine",
     "JSONPathBindingEngine",
-    "DotNotationBindingEngine",
-    "get_binding_engine",
-    "VariableParser",
-    "TemplateResolver",
-    "evaluate_expression",
-    "transform_schema",
-    "resolve_variables",
-    "BindingContext",
-    "EvaluationResult",
     "MappingResult",
     "MappingSpec",
     "SupportedDataType",
+    "TemplateResolver",
+    "VariableParser",
+    "evaluate_expression",
+    "get_binding_engine",
+    "register_binding_engine",
+    "resolve_variables",
+    "transform_schema",
 ]
 
 

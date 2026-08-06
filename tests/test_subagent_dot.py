@@ -1,6 +1,8 @@
-from json_schema_binder import DotNotationBindingEngine
-from pydantic import BaseModel
 import sys
+
+from pydantic import BaseModel
+
+from json_schema_binder import DotNotationBindingEngine
 
 
 class DummyModel(BaseModel):

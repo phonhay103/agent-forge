@@ -1,5 +1,6 @@
 import functools
-from typing import Any, Dict, Optional, TypeVar, Union, Type, Mapping
+from collections.abc import Mapping
+from typing import Any, TypeVar
 
 from jsonpath_ng.ext import parse
 from pydantic import BaseModel
@@ -72,11 +73,11 @@ class JSONPathBindingEngine(BaseBindingEngine):
     def transform(
         self,
         source_data: Any,
-        mapping_spec: Union[Dict[str, str], MappingSpec],
-        target_schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
+        mapping_spec: dict[str, str] | MappingSpec,
+        target_schema: dict[str, Any] | type[BaseModel] | None = None,
     ) -> MappingResult[Any]:
         spec = mapping_spec.field_mappings if isinstance(mapping_spec, MappingSpec) else mapping_spec
-        output: Dict[str, Any] = {}
+        output: dict[str, Any] = {}
         unresolved: list = []
         errors: list = []
 

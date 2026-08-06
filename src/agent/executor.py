@@ -1,23 +1,22 @@
 import json
 import logging
-import pathlib
 import os
+import pathlib
 import re
-from typing import Any, List, Dict, Union, Optional
-from pydantic import BaseModel, Field
+from typing import Any
 
-from src.agent.models import UnifiedPlan, UnifiedPlanTask, DynamicBindingMode, StaticPlan, DynamicPlan
-from src.agent.binder import DynamicDataBinder, BindingEngineProtocol
 from json_schema_binder import (
     BaseBindingEngine,
-    get_binding_engine,
-    VariableParser,
-    resolve_variables,
     BindingContext,
+    VariableParser,
+    get_binding_engine,
+    resolve_variables,
 )
-from src.shared.mcp_protocols import MCPSessionProtocol
-from src.shared.executor_models import ExecutionContext
 from prompt_composer import PromptComposer
+from src.agent.binder import DynamicDataBinder
+from src.agent.models import DynamicBindingMode, DynamicPlan, StaticPlan, UnifiedPlan
+from src.shared.executor_models import ExecutionContext
+from src.shared.mcp_protocols import MCPSessionProtocol
 
 logger = logging.getLogger("executor")
 DEFAULT_BINDING_FAILED_TOKEN = os.getenv("BINDING_FAILED_TOKEN", "__BINDING_FAILED__")
@@ -38,7 +37,7 @@ def _extract_task_references(args: Any) -> set:
     return refs
 
 
-def _rename_task_references(args: Any, id_map: Dict[str, str]) -> Any:
+def _rename_task_references(args: Any, id_map: dict[str, str]) -> Any:
     if isinstance(args, str):
         for old, new in id_map.items():
             args = re.sub(r'\$' + re.escape(old) + r'\b', '$' + new, args)
@@ -54,9 +53,9 @@ class StaticExecutor:
     def __init__(
         self,
         session: MCPSessionProtocol,
-        binding_engine: Union[str, BaseBindingEngine] = "jmespath",
-        model: Optional[Any] = None,
-        binding_failed_token: Optional[str] = None,
+        binding_engine: str | BaseBindingEngine = "jmespath",
+        model: Any | None = None,
+        binding_failed_token: str | None = None,
     ):
         self.session = session
         self.binding_failed_token = binding_failed_token or DEFAULT_BINDING_FAILED_TOKEN
@@ -69,9 +68,9 @@ class StaticExecutor:
         else:
             self.binding_engine = binding_engine
 
-        self.task_schemas_store: Dict[str, Any] = {}
+        self.task_schemas_store: dict[str, Any] = {}
 
-    async def run_plan(self, plan: Union[UnifiedPlan, StaticPlan]) -> ExecutionContext:
+    async def run_plan(self, plan: UnifiedPlan | StaticPlan) -> ExecutionContext:
         if not isinstance(plan, UnifiedPlan):
             plan = UnifiedPlan.model_validate(plan.model_dump())
         ctx = ExecutionContext()
@@ -114,7 +113,7 @@ class StaticExecutor:
             )
 
             # Ensure there are no unresolved references or tokens left
-            def find_unresolved_issue(v: Any) -> Optional[str]:
+            def find_unresolved_issue(v: Any) -> str | None:
                 if v == self.binding_failed_token:
                     return f"Sent by Planner due to missing input data ('{self.binding_failed_token}')"
                 if VariableParser.is_variable_reference(v):
@@ -149,35 +148,35 @@ class StaticExecutor:
             logger.debug(f"Resolved call arguments for tool '{task.tool_name}': {resolved_args}")
 
             result = await self.session.call_tool(
-                name=task.tool_name, 
+                name=task.tool_name,
                 arguments=resolved_args
             )
-            
+
             content = result.content[0].text
             try:
                 parsed_output = json.loads(content)
             except Exception:
                 parsed_output = content
-            
+
             logger.info(f"Task [{task.id}] execution succeeded. Output stored in context.")
             ctx.add_result(task.id, task.tool_name, parsed_output)
-            
+
             # Record source task tool schemas
             self.task_schemas_store[task.id] = {
                 "tool_name": task.tool_name,
                 "input_schema": target_tool_input_schema,
                 "output_schema": target_tool_metadata.output_schema if target_tool_metadata else {}
             }
-            
+
         logger.info("Execution of static plan completed successfully.")
         return ctx
 
     def _resolve_variables(
         self,
         args: Any,
-        store: Dict[str, Any],
-        target_tool_input_schema: Optional[Dict[str, Any]] = None,
-        task_schemas_store: Optional[Dict[str, Any]] = None,
+        store: dict[str, Any],
+        target_tool_input_schema: dict[str, Any] | None = None,
+        task_schemas_store: dict[str, Any] | None = None,
     ) -> Any:
         context = BindingContext.from_dict(store)
         if task_schemas_store:
@@ -197,10 +196,10 @@ class DynamicExecutor:
     def __init__(
         self,
         session: MCPSessionProtocol,
-        model: Optional[Any] = None,
+        model: Any | None = None,
         model_name: str = "gemini-2.5-flash",
-        prompt: Optional[PromptComposer] = None,
-        dynamic_binding_mode: Optional[DynamicBindingMode] = DynamicBindingMode.JMESPATH_VALIDATE,
+        prompt: PromptComposer | None = None,
+        dynamic_binding_mode: DynamicBindingMode | None = DynamicBindingMode.JMESPATH_VALIDATE,
     ):
         self.session = session
         self.dynamic_binding_mode = dynamic_binding_mode or DynamicBindingMode.JMESPATH_VALIDATE
@@ -208,9 +207,8 @@ class DynamicExecutor:
         self.prompt = prompt
 
         from src.agent.planner import DynamicPlanner
-        from src.agent.binder import DynamicDataBinder
         self.planner = DynamicPlanner(model=model, model_name=model_name, prompt=prompt)
-        
+
         # Default LLM runner for binder using injected model/model_name
         from src.shared.llm_client import run_structured_llm
         def default_llm_runner(variables: dict, schema: Any) -> Any:
@@ -225,9 +223,9 @@ class DynamicExecutor:
                 base_model=model,
             )
         self.binder = DynamicDataBinder(llm_runner=default_llm_runner)
-        self.task_schemas_store: Dict[str, Any] = {}
+        self.task_schemas_store: dict[str, Any] = {}
 
-    async def run_plan(self, plan: Union[UnifiedPlan, DynamicPlan]) -> ExecutionContext:
+    async def run_plan(self, plan: UnifiedPlan | DynamicPlan) -> ExecutionContext:
         if not isinstance(plan, UnifiedPlan):
             plan = UnifiedPlan.model_validate(plan.model_dump())
         ctx = ExecutionContext()
@@ -295,26 +293,26 @@ class DynamicExecutor:
             logger.debug(f"Resolved call arguments for tool '{task.tool_name}': {resolved_args}")
 
             result = await self.session.call_tool(
-                name=task.tool_name, 
+                name=task.tool_name,
                 arguments=resolved_args
             )
-            
+
             content = result.content[0].text
             try:
                 parsed_output = json.loads(content)
             except Exception:
                 parsed_output = content
-            
+
             logger.info(f"Task [{task.id}] execution succeeded. Output stored in context.")
             ctx.add_result(task.id, task.tool_name, parsed_output)
-            
+
             # Record source task tool schemas
             self.task_schemas_store[task.id] = {
                 "tool_name": task.tool_name,
                 "input_schema": target_tool_input_schema,
                 "output_schema": target_tool_metadata.output_schema if target_tool_metadata else {}
             }
-            
+
         logger.info("Execution of dynamic plan completed successfully.")
         return ctx
 
@@ -324,8 +322,8 @@ class DynamicExecutor:
         input_schema: dict,
         input_description: str,
         dependency_context: dict,
-        planned_jmespath: Optional[str] = None,
-        expected_source_schema: Optional[dict] = None,
+        planned_jmespath: str | None = None,
+        expected_source_schema: dict | None = None,
     ) -> dict:
         """Wrapper for LLM dynamic binding."""
         return self.binder.bind_with_validation(

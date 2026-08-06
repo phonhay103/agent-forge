@@ -1,6 +1,7 @@
-import os
 import functools
-from typing import Any, Optional
+import os
+from typing import Any
+
 
 @functools.lru_cache(maxsize=16)
 def get_llm_client(model_name: str = "gemini-2.5-flash", temperature: float = 0.0) -> Any:
@@ -19,10 +20,7 @@ def get_llm_client(model_name: str = "gemini-2.5-flash", temperature: float = 0.
     name = model_name
 
     # Special handling for openrouter since model names contain slashes (e.g., anthropic/claude-3.5-sonnet)
-    if model_name.lower().startswith("openrouter/"):
-        provider = "openrouter"
-        name = model_name[11:]
-    elif model_name.lower().startswith("openrouter:"):
+    if model_name.lower().startswith("openrouter/") or model_name.lower().startswith("openrouter:"):
         provider = "openrouter"
         name = model_name[11:]
     elif "/" in model_name:
@@ -44,7 +42,7 @@ def get_llm_client(model_name: str = "gemini-2.5-flash", temperature: float = 0.
         "ollama": "ollama",
         "openrouter": "openrouter",
     }
-    
+
     mapped_provider = provider_mapping.get(provider.lower(), provider.lower())
 
     # Pre-flight credential checks for major providers to assist developer onboarding
@@ -69,7 +67,7 @@ def get_structured_llm_client(
     schema: Any,
     model_name: str = "gemini-2.5-flash",
     temperature: float = 0.0,
-    base_model: Optional[Any] = None
+    base_model: Any | None = None
 ) -> Any:
     """
     Centralized factory for structured LLM clients.
@@ -85,14 +83,14 @@ def run_structured_llm(
     schema: Any,
     model_name: str = "gemini-2.5-flash",
     temperature: float = 0.0,
-    base_model: Optional[Any] = None
+    base_model: Any | None = None
 ) -> Any:
     """
     Centralized execution of structured LLM chains.
     Binds the structured schema, creates and runs the chain pipeline.
     """
-    from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
     from langchain_core.messages import SystemMessage
+    from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 
     if "user_query" in prompt_variables:
         prompt_template = ChatPromptTemplate([

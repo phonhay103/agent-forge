@@ -1,4 +1,4 @@
-from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -13,22 +13,22 @@ class AbstractPlanTask(BaseModel):
     intent: str = Field(
         description="Natural language description of what this task should accomplish"
     )
-    expected_input: Optional[str] = Field(
+    expected_input: str | None = Field(
         default=None,
         description="Natural language description of input needed"
     )
-    expected_output: Optional[str] = Field(
+    expected_output: str | None = Field(
         default=None,
         description="Natural language description of output produced"
     )
-    depends_on: List[str] = Field(
+    depends_on: list[str] = Field(
         default_factory=list,
         description="List of task IDs whose outputs this task depends on"
     )
-    reason: Optional[str] = Field(default=None)
+    reason: str | None = Field(default=None)
 
 
 class AbstractPlan(BaseModel):
     """Plan with only task intents — no tool names, no variable expressions."""
-    tasks: List[AbstractPlanTask] = Field(description="Ordered list of abstract tasks")
-    reason: Optional[str] = Field(default=None, description="Overall plan strategy")
+    tasks: list[AbstractPlanTask] = Field(description="Ordered list of abstract tasks")
+    reason: str | None = Field(default=None, description="Overall plan strategy")

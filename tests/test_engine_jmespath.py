@@ -1,9 +1,13 @@
 from src.agent.executor import StaticExecutor as HeadlessExecutor
-from src.shared.executor_models import ExecutionContext
 from src.mcp.schema.models import (
-    SupplyChainOutput, RegionSummary, BlockSummary,
-    OrgStructureOutput, DivisionSummary, ProjectSummary
+    BlockSummary,
+    DivisionSummary,
+    OrgStructureOutput,
+    ProjectSummary,
+    RegionSummary,
+    SupplyChainOutput,
 )
+
 
 class DummyClientSession:
     """Mock ClientSession for testing engine variable resolution without MCP network server."""
@@ -31,7 +35,7 @@ def test_engine_jmespath_filter_expression():
 
 def test_engine_jmespath_5_level_matrix_flattening():
     executor = HeadlessExecutor(session=DummyClientSession())
-    
+
     supply_output = SupplyChainOutput(
         network_name="Global Supply",
         total_regions=1,

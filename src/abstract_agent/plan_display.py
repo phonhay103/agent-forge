@@ -1,11 +1,10 @@
-import json
-from typing import List, Dict, Any
+from typing import Any
 
 
-def format_plan_display(plan: Any, tools_metadata: List[Dict[str, Any]]) -> str:
+def format_plan_display(plan: Any, tools_metadata: list[dict[str, Any]]) -> str:
     """Format an Abstract Plan for terminal display."""
     total = len(plan.tasks)
-    lines: List[str] = []
+    lines: list[str] = []
 
     lines.append("\u2554" + "\u2550" * 62 + "\u2557")
     lines.append("\u2551" + "           \U0001f4cb ABSTRACT EXECUTION PLAN                      " + "\u2551")
@@ -36,7 +35,7 @@ def format_plan_display(plan: Any, tools_metadata: List[Dict[str, Any]]) -> str:
             deps = ", ".join(task.depends_on)
             lines.append(f"\u2502    Depends on: {deps}")
         else:
-            lines.append(f"\u2502    Source: User Input")
+            lines.append("\u2502    Source: User Input")
 
         lines.append("\u2514" + "\u2500" * 61 + "\u2518")
         if idx < total - 1:

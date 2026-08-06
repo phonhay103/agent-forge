@@ -1,7 +1,6 @@
-import json
 
-import jmespath
 from src.mcp.schema.models import *
+
 
 def search_products(input: SearchInput) -> SearchOutput:
     """Search for products in catalog."""

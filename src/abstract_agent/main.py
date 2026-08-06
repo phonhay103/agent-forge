@@ -5,17 +5,18 @@ Run: python -m src.abstract_agent
 import asyncio
 import os
 import sys
+
 from dotenv import load_dotenv
-from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
-from src.abstract_agent.planner import AbstractPlanner
-from src.abstract_agent.models import AbstractPlan
+from mcp import ClientSession
 from src.abstract_agent.executor import AbstractExecutor
+from src.abstract_agent.models import AbstractPlan
 from src.abstract_agent.plan_display import format_plan_display
+from src.abstract_agent.planner import AbstractPlanner
+from src.shared.executor_models import ExecutionContext
 from src.shared.mcp_protocols import MCPClient
 from src.shared.test_inputs import TEST_SUITE
-from src.shared.executor_models import ExecutionContext
 
 MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://127.0.0.1:8000/mcp")
 
