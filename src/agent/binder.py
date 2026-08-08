@@ -14,18 +14,18 @@ class BindingEngineProtocol(Protocol):
         """Evaluates a single expression against source data."""
         ...
 
+
 logger = logging.getLogger("data_binder")
+
 
 class DataMappingPath(BaseModel):
     """Pydantic model representing structured LLM output for mapping path expressions."""
+
     path_expression: str = Field(
         default="",
-        description="A single, valid JMESPath expression that compiles and transforms the source context data into an object matching the target schema."
+        description="A single, valid JMESPath expression that compiles and transforms the source context data into an object matching the target schema.",
     )
-    jmespath_expression: str | None = Field(
-        default=None,
-        description="Deprecated/backward-compatible field name."
-    )
+    jmespath_expression: str | None = Field(default=None, description="Deprecated/backward-compatible field name.")
 
     @model_validator(mode="before")
     @classmethod
@@ -86,7 +86,9 @@ def schemas_match(expected: Any, actual: Any) -> bool:
             return False
 
     # Compare 'items' recursively
-    return not (("items" in expected or "items" in actual) and not schemas_match(expected.get("items"), actual.get("items")))
+    return not (
+        ("items" in expected or "items" in actual) and not schemas_match(expected.get("items"), actual.get("items"))
+    )
 
 
 class DynamicDataBinder:
@@ -94,6 +96,7 @@ class DynamicDataBinder:
     Decoupled layer for dynamic binding using schema generation and path transformation.
     Adheres to dependency injection by accepting an LLM runner callable.
     """
+
     def __init__(
         self,
         llm_runner: Callable[[dict[str, Any], Any], Any],
@@ -272,11 +275,13 @@ Source Context Data:
 Analyze the source context data and generate the output JSON conforming to the Target Schema.
 """
         )
-        prompt.set_variables({
-            "intent": intent,
-            "target_schema": json.dumps(target_schema, indent=2),
-            "context_data": json.dumps(source_data, indent=2),
-        })
+        prompt.set_variables(
+            {
+                "intent": intent,
+                "target_schema": json.dumps(target_schema, indent=2),
+                "context_data": json.dumps(source_data, indent=2),
+            }
+        )
         prompt_text = prompt.render()
 
         res = run_structured_llm(

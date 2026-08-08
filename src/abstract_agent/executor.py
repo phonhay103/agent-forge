@@ -19,6 +19,7 @@ TOOL_SELECTION_CONFIDENCE_THRESHOLD = 0.6
 
 class ToolSelection(BaseModel):
     """LLM output for tool resolution."""
+
     tool_name: str = Field(description="Name of the selected tool")
     confidence: float = Field(description="Confidence score 0.0-1.0")
     reasoning: str = Field(description="Why this tool was selected")
@@ -42,6 +43,7 @@ class AbstractExecutor:
         self.model_name = model_name
         if model is None:
             from src.shared.llm_client import get_llm_client
+
             model = get_llm_client(model_name)
         self.model = model
         self.tool_resolver_prompt = tool_resolver_prompt
@@ -65,11 +67,7 @@ class AbstractExecutor:
         for task in plan.tasks:
             logger.info(f"Executing task '{task.id}': {task.intent}")
 
-            dependency_context = {
-                dep_id: ctx.store[dep_id]
-                for dep_id in task.depends_on
-                if dep_id in ctx.store
-            }
+            dependency_context = {dep_id: ctx.store[dep_id] for dep_id in task.depends_on if dep_id in ctx.store}
 
             # Step 1: Resolve intent -> tool selection
             tool_selection = self._resolve_tool(
@@ -139,12 +137,14 @@ class AbstractExecutor:
     ) -> ToolSelection:
         """Use LLM to match intent to the best available tool."""
         prompt = self.tool_resolver_prompt or PromptComposer.from_file("tool_resolver_prompt.yaml", PROMPTS_DIR)
-        prompt.set_variables({
-            "intent": intent,
-            "expected_input": expected_input or "N/A",
-            "expected_output": expected_output or "N/A",
-            "available_tools": json.dumps(available_tools, indent=2),
-        })
+        prompt.set_variables(
+            {
+                "intent": intent,
+                "expected_input": expected_input or "N/A",
+                "expected_output": expected_output or "N/A",
+                "available_tools": json.dumps(available_tools, indent=2),
+            }
+        )
         prompt_text = prompt.render()
 
         result = run_structured_llm(
@@ -166,13 +166,15 @@ class AbstractExecutor:
     ) -> dict[str, Any]:
         """Use LLM to generate tool arguments."""
         prompt = self.bind_prompt or PromptComposer.from_file("abstract_bind_prompt.yaml", PROMPTS_DIR)
-        prompt.set_variables({
-            "tool_name": tool_name,
-            "target_schema": json.dumps(input_schema, indent=2),
-            "intent": intent,
-            "expected_input": expected_input or "N/A",
-            "context_data": json.dumps(dependency_context, indent=2, default=str),
-        })
+        prompt.set_variables(
+            {
+                "tool_name": tool_name,
+                "target_schema": json.dumps(input_schema, indent=2),
+                "intent": intent,
+                "expected_input": expected_input or "N/A",
+                "context_data": json.dumps(dependency_context, indent=2, default=str),
+            }
+        )
         prompt_text = prompt.render()
 
         result = run_structured_llm(

@@ -27,7 +27,7 @@ def balance_json_brackets(json_str: str) -> str:
     Idempotent helper that repairs truncated/unbalanced JSON bracket sequences at the end of a string.
     """
     stripped = json_str.rstrip()
-    prefix = stripped.rstrip('}]')
+    prefix = stripped.rstrip("}]")
     open_brackets = []
     in_string = False
     escape = False
@@ -36,7 +36,7 @@ def balance_json_brackets(json_str: str) -> str:
         if escape:
             escape = False
             continue
-        if c == '\\':
+        if c == "\\":
             escape = True
             continue
         if c == '"':
@@ -45,22 +45,22 @@ def balance_json_brackets(json_str: str) -> str:
         if in_string:
             continue
 
-        if c in '{[':
+        if c in "{[":
             open_brackets.append(c)
-        elif c in '}]':
+        elif c in "}]":
             if not open_brackets:
                 continue
-            if (c == '}' and open_brackets[-1] == '{') or (c == ']' and open_brackets[-1] == '['):
+            if (c == "}" and open_brackets[-1] == "{") or (c == "]" and open_brackets[-1] == "["):
                 open_brackets.pop()
 
     closing = []
     for b in reversed(open_brackets):
-        if b == '{':
-            closing.append('}')
+        if b == "{":
+            closing.append("}")
         else:
-            closing.append(']')
+            closing.append("]")
 
-    return prefix + ''.join(closing)
+    return prefix + "".join(closing)
 
 
 def normalize_jmespath(expr: str) -> str:
@@ -74,40 +74,40 @@ def normalize_jmespath(expr: str) -> str:
     expr = expr.strip()
 
     # If the expression starts with a backtick but does not end with one, append the closing backtick.
-    if expr.startswith('`') and not expr.endswith('`'):
-        expr = expr + '`'
+    if expr.startswith("`") and not expr.endswith("`"):
+        expr = expr + "`"
 
     # If the entire expression is wrapped in backticks, it is a single top-level JSON literal.
-    if expr.startswith('`') and expr.endswith('`'):
+    if expr.startswith("`") and expr.endswith("`"):
         content = expr[1:-1]
         balanced = balance_json_brackets(content)
-        return '`' + balanced + '`'
+        return "`" + balanced + "`"
 
     # 1. Fix double quotes wrapped around backticked literals, e.g.,
     # key: "`value`" or key: "`"value"`"
     def replacer(match: re.Match[str]) -> str:
         key = match.group(1)
         val = match.group(2).strip()
-        val_clean = val.strip('"\'')
+        val_clean = val.strip("\"'")
 
-        if val_clean.lower() in ('true', 'false') or val_clean.replace('.', '', 1).isdigit():
+        if val_clean.lower() in ("true", "false") or val_clean.replace(".", "", 1).isdigit():
             return f"{key}: `{val_clean}`"
         else:
-            return f"{key}: `\"{val_clean}\"`"
+            return f'{key}: `"{val_clean}"`'
 
     expr = re.sub(r'"?(\w+)"?:\s*"`([^`]+)`"', replacer, expr)
 
     # 2. Split by backticks to process keys/identifiers only outside of literals
-    parts = expr.split('`')
+    parts = expr.split("`")
     for i in range(len(parts)):
         if i % 2 == 0:
             # We are outside backticks; safe to strip double quotes from keys
-            parts[i] = re.sub(r'"(\w+)":', r'\1:', parts[i])
+            parts[i] = re.sub(r'"(\w+)":', r"\1:", parts[i])
         else:
             # We are inside a JSON literal; balance its brackets
             parts[i] = balance_json_brackets(parts[i])
 
-    return '`'.join(parts)
+    return "`".join(parts)
 
 
 @register_binding_engine("jmespath")
@@ -120,10 +120,13 @@ class JMESPathBindingEngine(BaseBindingEngine):
 
     @override
     def evaluate(self, expression: str, source_data: Any) -> EvaluationResult[Any]:
-        data = BindingContext.from_dict(source_data).data if isinstance(source_data, (dict, BindingContext, Mapping)) else source_data
+        data = (
+            BindingContext.from_dict(source_data).data
+            if isinstance(source_data, (dict, BindingContext, Mapping))
+            else source_data
+        )
         if hasattr(source_data, "model_dump") and not isinstance(source_data, (dict, BindingContext)):
             data = source_data.model_dump()
-
 
         expr = expression.strip()
         if expr.startswith("$"):
@@ -203,12 +206,10 @@ class JMESPathBindingEngine(BaseBindingEngine):
         return (
             "Variable Binding Engine: JMESPath\n"
             "To reference and transform values from the source context data, write direct JMESPath expressions "
-            "(e.g., \"items[?price > `500`].name\", \"regions[*].warehouse_matrix[][]\", "
-            "\"division_summaries | max_by(@, &total_budget)\", \"skus[0]\")."
+            '(e.g., "items[?price > `500`].name", "regions[*].warehouse_matrix[][]", '
+            '"division_summaries | max_by(@, &total_budget)", "skus[0]").'
         )
 
     @override
     def get_regex_pattern(self) -> str:
         return r"^(\$?[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+|\[.*?\]|\s*\|\s*.*|\{.*?\})*)$"
-
-

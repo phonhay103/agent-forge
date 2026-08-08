@@ -11,6 +11,7 @@ from src.mcp.schema.models import (
 
 class DummyClientSession:
     """Mock ClientSession for testing engine variable resolution without MCP network server."""
+
     pass
 
 
@@ -21,7 +22,7 @@ def test_engine_jmespath_filter_expression():
             "products": [
                 {"name": "iPhone 15 Pro", "price": 999, "rating": 4.8},
                 {"name": "iPhone 15", "price": 799, "rating": 4.6},
-                {"name": "MacBook Pro", "price": 1999, "rating": 4.9}
+                {"name": "MacBook Pro", "price": 1999, "rating": 4.9},
             ]
         }
     }
@@ -51,10 +52,10 @@ def test_engine_jmespath_5_level_matrix_flattening():
                 regional_value=5000.0,
                 block_summaries=[
                     BlockSummary(block_id="BLK-1", total_quantity=60, total_value=3000.0, manager_name="John"),
-                    BlockSummary(block_id="BLK-2", total_quantity=40, total_value=2000.0, manager_name="Alice")
-                ]
+                    BlockSummary(block_id="BLK-2", total_quantity=40, total_value=2000.0, manager_name="Alice"),
+                ],
             )
-        ]
+        ],
     )
 
     context_store = {"task_1": supply_output}
@@ -86,8 +87,10 @@ def test_engine_jmespath_max_by_function():
                 total_teams=2,
                 total_budget=500000.0,
                 project_summaries=[
-                    ProjectSummary(project_id="P1", project_name="AI Alpha", budget=500000.0, total_tasks=10, total_hours=200.0)
-                ]
+                    ProjectSummary(
+                        project_id="P1", project_name="AI Alpha", budget=500000.0, total_tasks=10, total_hours=200.0
+                    )
+                ],
             ),
             DivisionSummary(
                 division_id="DIV-2",
@@ -95,10 +98,12 @@ def test_engine_jmespath_max_by_function():
                 total_teams=2,
                 total_budget=300000.0,
                 project_summaries=[
-                    ProjectSummary(project_id="P2", project_name="Global Launch", budget=300000.0, total_tasks=5, total_hours=100.0)
-                ]
-            )
-        ]
+                    ProjectSummary(
+                        project_id="P2", project_name="Global Launch", budget=300000.0, total_tasks=5, total_hours=100.0
+                    )
+                ],
+            ),
+        ],
     )
 
     context_store = {"task_1": org_output}
@@ -111,26 +116,17 @@ def test_engine_jmespath_max_by_function():
 
 def test_engine_nested_dict_argument_resolution():
     executor = HeadlessExecutor(session=DummyClientSession())
-    context_store = {
-        "task_1": {
-            "tags": ["python", "ai", "mcp"],
-            "scores": [88, 92, 95]
-        }
-    }
+    context_store = {"task_1": {"tags": ["python", "ai", "mcp"], "scores": [88, 92, 95]}}
 
     tool_args = {
         "tag_string": "$task_1.tags | join(', ', @)",
         "max_score": "$task_1.scores | max_by(@, &@)",
-        "static_param": "hello"
+        "static_param": "hello",
     }
 
     resolved_args = executor._resolve_variables(tool_args, context_store)
 
-    assert resolved_args == {
-        "tag_string": "python, ai, mcp",
-        "max_score": 95,
-        "static_param": "hello"
-    }
+    assert resolved_args == {"tag_string": "python, ai, mcp", "max_score": 95, "static_param": "hello"}
 
 
 if __name__ == "__main__":

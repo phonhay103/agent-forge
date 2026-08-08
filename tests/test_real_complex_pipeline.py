@@ -28,57 +28,52 @@ from src.shared.mcp_protocols import MCPClient
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("test_complex_pipeline")
 
+
 # 1. Construct the deeply nested 5-level supply chain input data
 def make_complex_supply_chain_input() -> dict:
     input_obj = SupplyChainInput(
-        network_info=NetworkMetadata(network_name="Global Enterprise Tech Logistics", version="v5.1"), # Level 1
-        regions=[ # Level 1 -> Level 2 Array
-            RegionNode( # Level 2 Obj
+        network_info=NetworkMetadata(network_name="Global Enterprise Tech Logistics", version="v5.1"),  # Level 1
+        regions=[  # Level 1 -> Level 2 Array
+            RegionNode(  # Level 2 Obj
                 region_code="APAC-HQ",
-                warehouse_matrix=[ # Level 2 -> Level 3 Matrix (Array of Arrays)
+                warehouse_matrix=[  # Level 2 -> Level 3 Matrix (Array of Arrays)
                     [
-                        WarehouseBlock( # Level 3 Obj
+                        WarehouseBlock(  # Level 3 Obj
                             block_id="BLK-A1-PREMIUM",
                             manager=ManagerInfo(
-                                name="Alice Smith",
-                                contact=ContactDetail(email="alice@tech.com", phone="+123456789")
+                                name="Alice Smith", contact=ContactDetail(email="alice@tech.com", phone="+123456789")
                             ),
-                            aisles=[ # Level 3 -> Level 4 Array
-                                AisleStorage( # Level 4 Obj
+                            aisles=[  # Level 3 -> Level 4 Array
+                                AisleStorage(  # Level 4 Obj
                                     aisle_id="AISLE-99",
-                                    shelf_grid=[ # Level 4 -> Level 5 Matrix (Array of Arrays)
+                                    shelf_grid=[  # Level 4 -> Level 5 Matrix (Array of Arrays)
                                         [
-                                            ItemBatch( # Level 5 Obj
+                                            ItemBatch(  # Level 5 Obj
                                                 sku="SKU-CHIP-99",
                                                 item_name="AI Co-Processor Chip v2",
                                                 quantity=10,
-                                                unit_price=250.0, # Value: 2500.0
-                                                specification=ItemSpec(
-                                                    dimensions_cm=[2.0, 2.0, 0.3],
-                                                    weight_kg=0.08
-                                                )
+                                                unit_price=250.0,  # Value: 2500.0
+                                                specification=ItemSpec(dimensions_cm=[2.0, 2.0, 0.3], weight_kg=0.08),
                                             ),
                                             ItemBatch(
                                                 sku="SKU-RAM-88",
                                                 item_name="Premium High-Bandwidth DDR5 VRAM",
                                                 quantity=30,
-                                                unit_price=150.0, # Value: 4500.0
-                                                specification=ItemSpec(
-                                                    dimensions_cm=[15.0, 4.0, 0.6],
-                                                    weight_kg=0.15
-                                                )
-                                            )
+                                                unit_price=150.0,  # Value: 4500.0
+                                                specification=ItemSpec(dimensions_cm=[15.0, 4.0, 0.6], weight_kg=0.15),
+                                            ),
                                         ]
-                                    ]
+                                    ],
                                 )
-                            ]
+                            ],
                         )
                     ]
-                ]
+                ],
             )
-        ]
+        ],
     )
     return input_obj.model_dump()
+
 
 import pytest
 
@@ -99,19 +94,21 @@ async def test_complex_pipeline():
             configs = [
                 {
                     "engine": "jmespath",
-                    "expression": ["$task_1.region_summaries[*].block_summaries[] | max_by(@, &total_value).total_value"],
-                    "name": "JMESPATH EXCLUSIVE (Built-in max_by & Multi-field Projection)"
+                    "expression": [
+                        "$task_1.region_summaries[*].block_summaries[] | max_by(@, &total_value).total_value"
+                    ],
+                    "name": "JMESPATH EXCLUSIVE (Built-in max_by & Multi-field Projection)",
                 },
                 {
                     "engine": "jsonpath",
                     "expression": "$task_1.region_summaries[*].block_summaries[*].total_value",
-                    "name": "JSONPath Standard Wildcard Selection"
+                    "name": "JSONPath Standard Wildcard Selection",
                 },
                 {
                     "engine": "dot_notation",
                     "expression": ["$task_1.region_summaries.0.block_summaries.0.total_value"],
-                    "name": "Dot Notation Direct Index Access"
-                }
+                    "name": "Dot Notation Direct Index Access",
+                },
             ]
 
             for test_config in configs:
@@ -124,18 +121,8 @@ async def test_complex_pipeline():
 
                 complex_plan = Plan(
                     tasks=[
-                        PlanStep(
-                            id="task_1",
-                            tool_name="analyze_supply_chain",
-                            args=make_complex_supply_chain_input()
-                        ),
-                        PlanStep(
-                            id="task_2",
-                            tool_name="calculate",
-                            args={
-                                "prices": expr
-                            }
-                        )
+                        PlanStep(id="task_1", tool_name="analyze_supply_chain", args=make_complex_supply_chain_input()),
+                        PlanStep(id="task_2", tool_name="calculate", args={"prices": expr}),
                     ]
                 )
 
@@ -172,6 +159,6 @@ async def test_complex_pipeline():
     except Exception as e:
         logger.info(f"MCP Server connection failed ({e}). Skipping live pipeline test.")
 
+
 if __name__ == "__main__":
     anyio.run(test_complex_pipeline)
-

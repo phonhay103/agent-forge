@@ -1,4 +1,3 @@
-
 from json_schema_binder.base import _BINDING_ENGINES_REGISTRY, BaseBindingEngine, BindingType
 
 # Import concrete engines to ensure decorator registration triggers at startup
@@ -19,6 +18,5 @@ def get_binding_engine(binding_type: str | BindingType = BindingType.JMESPATH) -
 
     supported_engines = sorted(_BINDING_ENGINES_REGISTRY.keys())
     raise ValueError(
-        f"Unsupported binding_type: '{binding_type}'. "
-        f"Supported registered binding types are: {supported_engines}"
+        f"Unsupported binding_type: '{binding_type}'. Supported registered binding types are: {supported_engines}"
     )

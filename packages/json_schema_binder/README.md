@@ -25,12 +25,7 @@ pip install json-schema-binder
 from json_schema_binder import resolve_variables, BindingContext
 
 context = {
-    "source": {
-        "products": [
-            {"id": "P1", "name": "Laptop", "price": 1200},
-            {"id": "P2", "name": "Mouse", "price": 25}
-        ]
-    }
+    "source": {"products": [{"id": "P1", "name": "Laptop", "price": 1200}, {"id": "P2", "name": "Mouse", "price": 25}]}
 }
 
 # Resolve using JMESPath

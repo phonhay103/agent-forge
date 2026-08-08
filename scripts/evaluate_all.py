@@ -40,7 +40,7 @@ async def run_single_test(
         "status": "UNKNOWN",
         "plan": None,
         "execution": None,
-        "error": None
+        "error": None,
     }
 
     try:
@@ -74,7 +74,11 @@ async def run_single_test(
                     report["execution"] = results.model_dump()
                     report["status"] = "PASSED"
                 except ValueError as ve:
-                    report["status"] = "HALTED_BY_DESIGN" if ("__BINDING_FAILED_TOKEN" in str(ve) or "Execution Halted" in str(ve)) else "FAILED"
+                    report["status"] = (
+                        "HALTED_BY_DESIGN"
+                        if ("__BINDING_FAILED_TOKEN" in str(ve) or "Execution Halted" in str(ve))
+                        else "FAILED"
+                    )
                     report["error"] = str(ve)
                 except Exception as e:
                     report["status"] = "FAILED"
@@ -93,23 +97,20 @@ async def run_single_test(
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Run Evaluation Suite for MCP Headless Core.")
     parser.add_argument(
-        "--engine", "-e",
+        "--engine",
+        "-e",
         choices=["jmespath", "jsonpath", "dot_notation"],
         default="jmespath",
-        help="Variable binding engine to evaluate (default: jmespath)"
+        help="Variable binding engine to evaluate (default: jmespath)",
     )
 
+    parser.add_argument("--tc", "-t", type=str, default=None, help="Run a specific test case by ID (e.g., TC-01)")
     parser.add_argument(
-        "--tc", "-t",
-        type=str,
-        default=None,
-        help="Run a specific test case by ID (e.g., TC-01)"
-    )
-    parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=str,
         default="evaluation_report.json",
-        help="Output report JSON file path (default: evaluation_report.json)"
+        help="Output report JSON file path (default: evaluation_report.json)",
     )
     args = parser.parse_args()
 
@@ -141,9 +142,9 @@ async def main() -> None:
     print("\n" + "=" * 60)
     print("                EVALUATION SUMMARY RESULTS                 ")
     print("=" * 60)
-    passed = sum(1 for r in results if r['status'] == 'PASSED')
-    halted = sum(1 for r in results if r['status'] == 'HALTED_BY_DESIGN')
-    failed = sum(1 for r in results if r['status'] in ('FAILED', 'SERVER_ERROR'))
+    passed = sum(1 for r in results if r["status"] == "PASSED")
+    halted = sum(1 for r in results if r["status"] == "HALTED_BY_DESIGN")
+    failed = sum(1 for r in results if r["status"] in ("FAILED", "SERVER_ERROR"))
 
     print(f"Total Evaluated: {len(results)}")
     print(f"PASSED:           {passed} ({passed / len(results) * 100:.1f}%)")

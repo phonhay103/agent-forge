@@ -14,36 +14,28 @@ async def run_e2e_test(test_id, test_query, binding_type):
             "description": "Searches for general information or market data.",
             "inputSchema": {
                 "type": "object",
-                "properties": {
-                    "query": {"type": "string"},
-                    "limit": {"type": "integer", "default": 5}
-                },
-                "required": ["query"]
-            }
+                "properties": {"query": {"type": "string"}, "limit": {"type": "integer", "default": 5}},
+                "required": ["query"],
+            },
         },
         {
             "name": "analyze_supply_chain",
             "description": "Analyzes a 5-level nested supply chain structure.",
             "inputSchema": {
                 "type": "object",
-                "properties": {
-                    "network_info": {"type": "object"},
-                    "regions": {"type": "array"}
-                },
-                "required": ["network_info", "regions"]
-            }
+                "properties": {"network_info": {"type": "object"}, "regions": {"type": "array"}},
+                "required": ["network_info", "regions"],
+            },
         },
         {
-             "name": "calculate",
-             "description": "Evaluates a mathematical expression.",
-             "inputSchema": {
-                 "type": "object",
-                 "properties": {
-                     "expression": {"type": "string"}
-                 },
-                 "required": ["expression"]
-             }
-        }
+            "name": "calculate",
+            "description": "Evaluates a mathematical expression.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {"expression": {"type": "string"}},
+                "required": ["expression"],
+            },
+        },
     ]
 
     planner = Planner()
@@ -59,6 +51,7 @@ async def run_e2e_test(test_id, test_query, binding_type):
 
     return plan
 
+
 import os
 
 import pytest
@@ -69,6 +62,7 @@ async def test_e2e_planner_jmespath():
     if not os.getenv("GOOGLE_API_KEY"):
         pytest.skip("GOOGLE_API_KEY is not set.")
     await run_e2e_test("T1", "Search for global tech supply chain and analyze its supply chain structure.", "jmespath")
+
 
 @pytest.mark.anyio
 async def test_e2e_planner_jsonpath():

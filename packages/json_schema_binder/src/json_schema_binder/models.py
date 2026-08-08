@@ -14,15 +14,14 @@ class BindingContext(BaseModel):
     """
     Structured container for source data context.
     """
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     data: dict[str, SupportedDataType] = Field(
-        default_factory=dict,
-        description="Source data namespaces or root objects."
+        default_factory=dict, description="Source data namespaces or root objects."
     )
     metadata: dict[str, SupportedDataType] = Field(
-        default_factory=dict,
-        description="Optional metadata or schema store."
+        default_factory=dict, description="Optional metadata or schema store."
     )
 
     @classmethod
@@ -36,6 +35,7 @@ class BindingContext(BaseModel):
                 formatted_data[k] = v.model_dump()
             elif hasattr(v, "__dataclass_fields__"):
                 from dataclasses import asdict
+
                 formatted_data[k] = asdict(v)
             else:
                 formatted_data[k] = v
@@ -46,9 +46,10 @@ class MappingSpec(BaseModel):
     """
     Direct mapping specification binding target field names to expression strings.
     """
+
     field_mappings: dict[str, str] = Field(
         default_factory=dict,
-        description="Map of target_field -> expression_string (e.g. {'amount': 'inventory.total_value'})"
+        description="Map of target_field -> expression_string (e.g. {'amount': 'inventory.total_value'})",
     )
 
 
@@ -56,6 +57,7 @@ class EvaluationResult(BaseModel, Generic[T]):
     """
     Result contract from evaluating a single expression.
     """
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     value: T = Field(description="The evaluated output value.")
@@ -69,13 +71,13 @@ class MappingResult(BaseModel, Generic[T]):
     """
     Result contract from schema/payload transformation.
     """
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     output: T = Field(description="The mapped and schema-validated output.")
     is_success: bool = Field(description="True if mapping succeeded.")
     engine: str = Field(description="Binding engine used.")
     unresolved_expressions: list[str] = Field(
-        default_factory=list,
-        description="List of expressions that failed to evaluate or match."
+        default_factory=list, description="List of expressions that failed to evaluate or match."
     )
     errors: list[str] = Field(default_factory=list, description="Any evaluation or validation errors.")

@@ -24,44 +24,21 @@ def test_factory():
 
 
 def test_jmespath_resolution():
-    context = {
-        "step_1": {
-            "users": [
-                {"name": "Alice", "age": 30},
-                {"name": "Bob", "age": 20}
-            ]
-        }
-    }
+    context = {"step_1": {"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 20}]}}
     res = resolve_variables({"adults": "$step_1.users[?age >= `25`].name"}, context, engine="jmespath")
     assert res == {"adults": ["Alice"]}
 
 
 def test_jsonpath_resolution():
-    context = {
-        "step_1": {
-            "users": [
-                {"name": "Alice", "age": 30},
-                {"name": "Bob", "age": 20}
-            ]
-        }
-    }
+    context = {"step_1": {"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 20}]}}
     res = resolve_variables({"adults": "$step_1.users[?(@.age >= 25)].name"}, context, engine="jsonpath")
     assert res == {"adults": ["Alice"]}
 
 
 def test_dot_notation_resolution():
-    context = {
-        "step_1": {
-            "users": [
-                {"name": "Alice", "age": 30},
-                {"name": "Bob", "age": 20}
-            ]
-        }
-    }
+    context = {"step_1": {"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 20}]}}
     res = resolve_variables({"first_user": "$step_1.users.0.name"}, context, engine="dot_notation")
     assert res == {"first_user": "Alice"}
-
-
 
 
 def test_variable_parser():

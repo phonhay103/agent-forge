@@ -10,9 +10,7 @@ from src.shared.executor_models import ExecutionContext
 
 def test_abstract_planner():
     planner = AbstractPlanner()
-    available_tools = [
-        {"name": "search", "description": "Search something"}
-    ]
+    available_tools = [{"name": "search", "description": "Search something"}]
     mock_plan = AbstractPlan(
         tasks=[
             AbstractPlanTask(
@@ -20,10 +18,10 @@ def test_abstract_planner():
                 intent="Search for laptops",
                 expected_input="NL query",
                 expected_output="List of laptops",
-                depends_on=[]
+                depends_on=[],
             )
         ],
-        reason="Test plan"
+        reason="Test plan",
     )
     with patch("src.abstract_agent.planner.run_structured_llm", return_value=mock_plan) as mock_run:
         plan = planner.create_plan("Search for laptops", available_tools)
@@ -31,17 +29,13 @@ def test_abstract_planner():
         assert plan.tasks[0].intent == "Search for laptops"
         mock_run.assert_called_once()
 
+
 @pytest.mark.anyio
 async def test_abstract_executor():
     mcp_client = AsyncMock()
     mock_tool = MagicMock()
     mock_tool.name = "search"
-    mock_tool.input_schema = {
-        "type": "object",
-        "properties": {
-            "query": {"type": "string"}
-        }
-    }
+    mock_tool.input_schema = {"type": "object", "properties": {"query": {"type": "string"}}}
     mock_tools_response = MagicMock()
     mock_tools_response.tools = [mock_tool]
     mcp_client.list_tools = AsyncMock(return_value=mock_tools_response)
@@ -61,17 +55,13 @@ async def test_abstract_executor():
                 intent="Search for laptops",
                 expected_input="NL query",
                 expected_output="List of laptops",
-                depends_on=[]
+                depends_on=[],
             )
         ],
-        reason="Test plan"
+        reason="Test plan",
     )
 
-    mock_tool_selection = ToolSelection(
-        tool_name="search",
-        confidence=0.9,
-        reasoning="Matches search intent"
-    )
+    mock_tool_selection = ToolSelection(tool_name="search", confidence=0.9, reasoning="Matches search intent")
     mock_args = {"query": "laptops"}
 
     with patch.object(executor, "_resolve_tool", return_value=mock_tool_selection) as mock_resolve:
@@ -81,26 +71,19 @@ async def test_abstract_executor():
             assert ctx.results[0].task_id == "task_search"
             assert ctx.results[0].tool_name == "search"
             assert ctx.results[0].output == {"results": ["laptop1", "laptop2"]}
-            mcp_client.call_tool.assert_called_once_with(
-                name="search",
-                arguments={"query": "laptops"}
-            )
+            mcp_client.call_tool.assert_called_once_with(name="search", arguments={"query": "laptops"})
             mock_resolve.assert_called_once()
             mock_bind.assert_called_once()
 
 
 def test_abstract_agent_prompt_injection():
     from prompt_composer import PromptComposer
+
     custom_prompt = PromptComposer().set_section("test_sec", "custom template text")
 
     planner = AbstractPlanner(prompt=custom_prompt)
     assert planner.prompt == custom_prompt
 
-    executor = AbstractExecutor(
-        AsyncMock(),
-        tool_resolver_prompt=custom_prompt,
-        bind_prompt=custom_prompt
-    )
+    executor = AbstractExecutor(AsyncMock(), tool_resolver_prompt=custom_prompt, bind_prompt=custom_prompt)
     assert executor.tool_resolver_prompt == custom_prompt
     assert executor.bind_prompt == custom_prompt
-

@@ -14,12 +14,7 @@ class ShippingLabel(BaseModel):
 
 
 def test_evaluate_expression_jmespath():
-    source_data = {
-        "order": {
-            "customer": {"name": "Bob Smith"},
-            "items": [{"id": 1}, {"id": 2}, {"id": 3}]
-        }
-    }
+    source_data = {"order": {"customer": {"name": "Bob Smith"}, "items": [{"id": 1}, {"id": 2}, {"id": 3}]}}
 
     res_name = evaluate_expression("order.customer.name", source_data, engine="jmespath")
     assert isinstance(res_name, EvaluationResult)
@@ -31,17 +26,9 @@ def test_evaluate_expression_jmespath():
 
 
 def test_transform_schema():
-    source_data = {
-        "order": {
-            "customer": {"name": "Bob Smith"},
-            "items": [{"id": 1}, {"id": 2}, {"id": 3}]
-        }
-    }
+    source_data = {"order": {"customer": {"name": "Bob Smith"}, "items": [{"id": 1}, {"id": 2}, {"id": 3}]}}
 
-    mapping_spec = {
-        "recipient": "order.customer.name",
-        "item_count": "length(order.items)"
-    }
+    mapping_spec = {"recipient": "order.customer.name", "item_count": "length(order.items)"}
 
     res = transform_schema(source_data, mapping_spec, engine="jmespath", target_schema=ShippingLabel)
 

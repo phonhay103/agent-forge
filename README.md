@@ -127,12 +127,7 @@ You can use the binding layer independently to extract and transform data betwee
 from json_schema_binder import resolve_variables
 
 context_store = {
-    "step_1": {
-        "products": [
-            {"id": "P1", "name": "Laptop", "price": 1200},
-            {"id": "P2", "name": "Mouse", "price": 25}
-        ]
-    }
+    "step_1": {"products": [{"id": "P1", "name": "Laptop", "price": 1200}, {"id": "P2", "name": "Mouse", "price": 25}]}
 }
 
 # Resolve using JMESPath

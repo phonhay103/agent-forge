@@ -25,9 +25,11 @@ _BINDING_ENGINES_REGISTRY: dict[str, Any] = {}
 
 def register_binding_engine(name: str) -> Callable[[Any], Any]:
     """Decorator to register a concrete binding engine class."""
+
     def decorator(cls: Any) -> Any:
         _BINDING_ENGINES_REGISTRY[name.lower().strip()] = cls
         return cls
+
     return decorator
 
 
@@ -65,5 +67,3 @@ class BaseBindingEngine(ABC):
     def get_regex_pattern(self) -> str | None:
         """Returns the official representative regex pattern for this binding engine, or None if not defined."""
         return None
-
-

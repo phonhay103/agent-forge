@@ -15,6 +15,7 @@ class TemplateResolver:
     Decoupled utility for parsing template payloads containing variable expressions (e.g. '$user.name')
     and delegating evaluation directly to a binding engine's evaluate() method.
     """
+
     def __init__(self, engine: str | BaseBindingEngine = "jmespath") -> None:
         self.engine = get_binding_engine(engine) if isinstance(engine, str) else engine
 

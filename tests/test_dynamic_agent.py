@@ -10,9 +10,7 @@ from src.shared.executor_models import ExecutionContext
 
 def test_dynamic_planner():
     planner = DynamicPlanner()
-    available_tools = [
-        {"name": "search", "description": "Search something"}
-    ]
+    available_tools = [{"name": "search", "description": "Search something"}]
     mock_plan = DynamicPlan(
         tasks=[
             DynamicPlanTask(
@@ -20,10 +18,10 @@ def test_dynamic_planner():
                 tool_name="search",
                 input_description="Search for laptops",
                 output_description="List of laptops",
-                depends_on=[]
+                depends_on=[],
             )
         ],
-        reason="Test plan"
+        reason="Test plan",
     )
     with patch("src.agent.planner.run_structured_llm", return_value=mock_plan) as mock_run:
         plan = planner.create_plan("Search for laptops", available_tools)
@@ -31,17 +29,13 @@ def test_dynamic_planner():
         assert plan.tasks[0].tool_name == "search"
         mock_run.assert_called_once()
 
+
 @pytest.mark.anyio
 async def test_dynamic_executor():
     mcp_client = AsyncMock()
     mock_tool = MagicMock()
     mock_tool.name = "search"
-    mock_tool.input_schema = {
-        "type": "object",
-        "properties": {
-            "query": {"type": "string"}
-        }
-    }
+    mock_tool.input_schema = {"type": "object", "properties": {"query": {"type": "string"}}}
     mock_tools_response = MagicMock()
     mock_tools_response.tools = [mock_tool]
     mcp_client.list_tools = AsyncMock(return_value=mock_tools_response)
@@ -61,10 +55,10 @@ async def test_dynamic_executor():
                 tool_name="search",
                 input_description="Search for laptops",
                 output_description="List of laptops",
-                depends_on=[]
+                depends_on=[],
             )
         ],
-        reason="Test plan"
+        reason="Test plan",
     )
 
     mock_args = {"query": "laptops"}
@@ -73,23 +67,17 @@ async def test_dynamic_executor():
         assert len(ctx.results) == 1
         assert ctx.results[0].task_id == "task_search"
         assert ctx.results[0].output == {"results": ["laptop1", "laptop2"]}
-        mcp_client.call_tool.assert_called_once_with(
-            name="search",
-            arguments={"query": "laptops"}
-        )
+        mcp_client.call_tool.assert_called_once_with(name="search", arguments={"query": "laptops"})
         mock_bind.assert_called_once()
 
 
 def test_dynamic_agent_prompt_injection():
     from prompt_composer import PromptComposer
+
     custom_prompt = PromptComposer().set_section("test_sec", "custom template text")
 
     planner = DynamicPlanner(prompt=custom_prompt)
     assert planner.prompt == custom_prompt
 
-    executor = DynamicExecutor(
-        AsyncMock(),
-        prompt=custom_prompt
-    )
+    executor = DynamicExecutor(AsyncMock(), prompt=custom_prompt)
     assert executor.prompt == custom_prompt
-

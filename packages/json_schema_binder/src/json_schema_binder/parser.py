@@ -10,6 +10,7 @@ class VariableParser:
     Utility for detecting and validating variable references
     and unresolved variables within payloads.
     """
+
     @staticmethod
     def is_variable_reference(val: Any) -> bool:
         """Checks if a value is a string starting with an unresolved variable reference (e.g. $var_name)."""
@@ -50,4 +51,3 @@ class VariableParser:
         elif hasattr(v, "model_dump"):
             unresolved.extend(cls.extract_unresolved_references(v.model_dump()))
         return unresolved
-

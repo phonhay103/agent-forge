@@ -2,6 +2,7 @@
 Abstract Planning Agent — Interactive CLI
 Run: python -m src.abstract_agent
 """
+
 import asyncio
 import os
 import sys
@@ -58,32 +59,32 @@ async def main() -> None:
             streamablehttp_client(MCP_SERVER_URL) as (read, write, _),
             ClientSession(read, write) as session,
         ):
-                print("--- Discovering Tools via MCP Server ---")
-                await session.initialize()
-                tools_list = await session.list_tools()
-                tools_metadata = [t.model_dump() for t in tools_list.tools]
-                print(f"Discovered {len(tools_metadata)} tools.\n")
+            print("--- Discovering Tools via MCP Server ---")
+            await session.initialize()
+            tools_list = await session.list_tools()
+            tools_metadata = [t.model_dump() for t in tools_list.tools]
+            print(f"Discovered {len(tools_metadata)} tools.\n")
 
-                try:
-                    planner = AbstractPlanner()
-                    plan: AbstractPlan = planner.create_plan(task, tools_metadata)
-                except Exception as plan_err:
-                    print(f"\n[PLANNING ERROR] Failed to create plan: {format_exception(plan_err)}")
-                    return
+            try:
+                planner = AbstractPlanner()
+                plan: AbstractPlan = planner.create_plan(task, tools_metadata)
+            except Exception as plan_err:
+                print(f"\n[PLANNING ERROR] Failed to create plan: {format_exception(plan_err)}")
+                return
 
-                print(format_plan_display(plan, tools_metadata))
-                print()
+            print(format_plan_display(plan, tools_metadata))
+            print()
 
-                mcp_client = MCPClient(session)
-                executor = AbstractExecutor(mcp_client)
-                try:
-                    results: ExecutionContext = await executor.run_plan(plan)
-                    print("\n--- Final Execution Results ---")
-                    print(results.model_dump_json(indent=2))
-                except ValueError as ve:
-                    print(f"\n[EXECUTION HALTED] {ve}")
-                except Exception as ex:
-                    print(f"\n[EXECUTION ERROR] {format_exception(ex)}")
+            mcp_client = MCPClient(session)
+            executor = AbstractExecutor(mcp_client)
+            try:
+                results: ExecutionContext = await executor.run_plan(plan)
+                print("\n--- Final Execution Results ---")
+                print(results.model_dump_json(indent=2))
+            except ValueError as ve:
+                print(f"\n[EXECUTION HALTED] {ve}")
+            except Exception as ex:
+                print(f"\n[EXECUTION ERROR] {format_exception(ex)}")
     except (ConnectionError, OSError) as conn_err:
         print(f"\nError: Could not connect to MCP Server at {MCP_SERVER_URL}: {format_exception(conn_err)}")
         print("Please ensure the MCP server is running.")

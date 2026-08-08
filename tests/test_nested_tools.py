@@ -33,52 +33,51 @@ from src.mcp.tools import business_tools as tools
 
 def test_analyze_supply_chain_5_levels():
     input_data = SupplyChainInput(
-        network_info=NetworkMetadata(network_name="Global Tech Supply", version="v2.0"), # Level 1 (Obj -> Obj)
-        regions=[ # Level 1 -> Level 2 (Obj -> Array)
-            RegionNode( # Level 2 (Array -> Obj)
+        network_info=NetworkMetadata(network_name="Global Tech Supply", version="v2.0"),  # Level 1 (Obj -> Obj)
+        regions=[  # Level 1 -> Level 2 (Obj -> Array)
+            RegionNode(  # Level 2 (Array -> Obj)
                 region_code="APAC-NORTH",
-                warehouse_matrix=[ # Level 2 -> Level 3 (Obj -> Array -> Array)
+                warehouse_matrix=[  # Level 2 -> Level 3 (Obj -> Array -> Array)
                     [
-                        WarehouseBlock( # Level 3 (Array -> Obj)
+                        WarehouseBlock(  # Level 3 (Array -> Obj)
                             block_id="BLK-A1",
-                            manager=ManagerInfo( # Level 3 (Obj -> Obj)
+                            manager=ManagerInfo(  # Level 3 (Obj -> Obj)
                                 name="Alice Smith",
-                                contact=ContactDetail(email="alice@tech.com", phone="+123456789") # Level 3 (Obj -> Obj)
+                                contact=ContactDetail(
+                                    email="alice@tech.com", phone="+123456789"
+                                ),  # Level 3 (Obj -> Obj)
                             ),
-                            aisles=[ # Level 3 -> Level 4 (Obj -> Array)
-                                AisleStorage( # Level 4 (Array -> Obj)
+                            aisles=[  # Level 3 -> Level 4 (Obj -> Array)
+                                AisleStorage(  # Level 4 (Array -> Obj)
                                     aisle_id="AISLE-01",
-                                    shelf_grid=[ # Level 4 -> Level 5 (Obj -> Array -> Array)
+                                    shelf_grid=[  # Level 4 -> Level 5 (Obj -> Array -> Array)
                                         [
-                                            ItemBatch( # Level 5 (Array -> Obj)
+                                            ItemBatch(  # Level 5 (Array -> Obj)
                                                 sku="SKU-MICRO-01",
                                                 item_name="Microchip A1",
                                                 quantity=5,
                                                 unit_price=120.0,
-                                                specification=ItemSpec( # Level 5 (Obj -> Obj)
-                                                    dimensions_cm=[1.5, 1.5, 0.2], # Level 5 (Obj -> Array)
-                                                    weight_kg=0.05
-                                                )
+                                                specification=ItemSpec(  # Level 5 (Obj -> Obj)
+                                                    dimensions_cm=[1.5, 1.5, 0.2],  # Level 5 (Obj -> Array)
+                                                    weight_kg=0.05,
+                                                ),
                                             ),
                                             ItemBatch(
                                                 sku="SKU-RAM-02",
                                                 item_name="DDR5 RAM 16GB",
                                                 quantity=50,
                                                 unit_price=80.0,
-                                                specification=ItemSpec(
-                                                    dimensions_cm=[13.3, 3.0, 0.5],
-                                                    weight_kg=0.1
-                                                )
-                                            )
+                                                specification=ItemSpec(dimensions_cm=[13.3, 3.0, 0.5], weight_kg=0.1),
+                                            ),
                                         ]
-                                    ]
+                                    ],
                                 )
-                            ]
+                            ],
                         )
                     ]
-                ]
+                ],
             )
-        ]
+        ],
     )
 
     output = tools.analyze_supply_chain(input_data)
@@ -94,10 +93,7 @@ def test_analyze_supply_chain_5_levels():
 
 def test_process_org_structure_5_levels():
     input_data = OrgStructureInput(
-        company_profile=CompanyProfile(
-            company_name="Acme Corp",
-            hq_address=Address(city="Tokyo", country="Japan")
-        ),
+        company_profile=CompanyProfile(company_name="Acme Corp", hq_address=Address(city="Tokyo", country="Japan")),
         divisions=[
             DivisionNode(
                 division_id="DIV-ENG",
@@ -107,8 +103,7 @@ def test_process_org_structure_5_levels():
                         TeamUnit(
                             team_id="TEAM-CORE",
                             lead=TeamLead(
-                                name="Bob Jones",
-                                contact=ContactDetail(email="bob@acme.com", phone="+81001122")
+                                name="Bob Jones", contact=ContactDetail(email="bob@acme.com", phone="+81001122")
                             ),
                             projects=[
                                 ProjectDetail(
@@ -122,28 +117,24 @@ def test_process_org_structure_5_levels():
                                                 title="Design Architecture",
                                                 estimated_hours=40.0,
                                                 assignee=AssigneeProfile(
-                                                    user_id="USR-101",
-                                                    skills=["Python", "PyTorch", "Architecture"]
-                                                )
+                                                    user_id="USR-101", skills=["Python", "PyTorch", "Architecture"]
+                                                ),
                                             ),
                                             TaskNode(
                                                 task_id="TASK-02",
                                                 title="Implement Optimization",
                                                 estimated_hours=25.0,
-                                                assignee=AssigneeProfile(
-                                                    user_id="USR-102",
-                                                    skills=["C++", "CUDA"]
-                                                )
-                                            )
+                                                assignee=AssigneeProfile(user_id="USR-102", skills=["C++", "CUDA"]),
+                                            ),
                                         ]
-                                    ]
+                                    ],
                                 )
-                            ]
+                            ],
                         )
                     ]
-                ]
+                ],
             )
-        ]
+        ],
     )
 
     output = tools.process_org_structure(input_data)
@@ -158,8 +149,7 @@ def test_process_org_structure_5_levels():
 def test_evaluate_nested_curriculum_5_levels():
     input_data = CurriculumInput(
         program_meta=ProgramMeta(
-            program_code="CS-BS",
-            accreditation=AccreditationInfo(agency="ABET", valid_until="2032-12-31")
+            program_code="CS-BS", accreditation=AccreditationInfo(agency="ABET", valid_until="2032-12-31")
         ),
         academic_years=[
             AcademicYearNode(
@@ -172,7 +162,7 @@ def test_evaluate_nested_curriculum_5_levels():
                             credits=4,
                             instructor=InstructorProfile(
                                 name="Dr. Grace",
-                                contact=ContactDetail(email="grace@university.edu", phone="+199988877")
+                                contact=ContactDetail(email="grace@university.edu", phone="+199988877"),
                             ),
                             class_sections=[
                                 ClassSection(
@@ -182,17 +172,17 @@ def test_evaluate_nested_curriculum_5_levels():
                                             ScheduleSlot(
                                                 room_number="R-101",
                                                 location=LocationDetail(building="Science Hall", floor=2),
-                                                enrolled_scores=[85.0, 92.5, 78.0, 90.0]
+                                                enrolled_scores=[85.0, 92.5, 78.0, 90.0],
                                             )
                                         ]
-                                    ]
+                                    ],
                                 )
-                            ]
+                            ],
                         )
                     ]
-                ]
+                ],
             )
-        ]
+        ],
     )
 
     output = tools.evaluate_nested_curriculum(input_data)

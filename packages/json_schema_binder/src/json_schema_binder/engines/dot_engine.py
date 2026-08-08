@@ -43,10 +43,13 @@ class DotNotationBindingEngine(BaseBindingEngine):
 
     @override
     def evaluate(self, expression: str, source_data: Any) -> EvaluationResult[Any]:
-        data = BindingContext.from_dict(source_data).data if isinstance(source_data, (dict, BindingContext, Mapping)) else source_data
+        data = (
+            BindingContext.from_dict(source_data).data
+            if isinstance(source_data, (dict, BindingContext, Mapping))
+            else source_data
+        )
         if hasattr(source_data, "model_dump") and not isinstance(source_data, (dict, BindingContext)):
             data = source_data.model_dump()
-
 
         expr = expression.strip()
         if expr.startswith("$"):
@@ -114,7 +117,7 @@ class DotNotationBindingEngine(BaseBindingEngine):
         return (
             "Variable Binding Engine: Dot Notation\n"
             "To reference values from the source context data, use standard dot notation only "
-            "(e.g., \"$step_1.field_name\", \"$step_1.items.0\").\n"
+            '(e.g., "$step_1.field_name", "$step_1.items.0").\n'
             "CRITICAL REQUIREMENT FOR DOT NOTATION:\n"
             "- Do NOT use bracket filters, query expressions, or wildcards like '[?(@.price > 800)]' or '[*]'.\n"
             "- Variable bindings MUST be simple dot-separated paths containing only letters, numbers, underscores, and zero-based numeric array indices (e.g. '$step_1.items' or '$step_1.items.0.price')."
@@ -123,5 +126,3 @@ class DotNotationBindingEngine(BaseBindingEngine):
     @override
     def get_regex_pattern(self) -> str:
         return r"^(\$?[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*)$"
-
-

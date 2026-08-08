@@ -23,12 +23,7 @@ def test_factory_creation():
 
 def test_jmespath_binding_engine():
     engine = JMESPathBindingEngine()
-    context = {
-        "products": [
-            {"name": "Laptop", "price": 1200},
-            {"name": "Mouse", "price": 25}
-        ]
-    }
+    context = {"products": [{"name": "Laptop", "price": 1200}, {"name": "Mouse", "price": 25}]}
 
     instruction = engine.get_system_prompt_instruction()
     assert "Variable Binding Engine: JMESPath" in instruction
@@ -39,12 +34,7 @@ def test_jmespath_binding_engine():
 
 def test_jsonpath_binding_engine():
     engine = JSONPathBindingEngine()
-    context = {
-        "products": [
-            {"name": "Laptop", "price": 1200},
-            {"name": "Mouse", "price": 25}
-        ]
-    }
+    context = {"products": [{"name": "Laptop", "price": 1200}, {"name": "Mouse", "price": 25}]}
 
     instruction = engine.get_system_prompt_instruction()
     assert "Variable Binding Engine: JSONPath" in instruction
@@ -58,12 +48,7 @@ def test_jsonpath_binding_engine():
 
 def test_dot_notation_binding_engine():
     engine = DotNotationBindingEngine()
-    context = {
-        "products": [
-            {"name": "Laptop", "price": 1200},
-            {"name": "Mouse", "price": 25}
-        ]
-    }
+    context = {"products": [{"name": "Laptop", "price": 1200}, {"name": "Mouse", "price": 25}]}
 
     instruction = engine.get_system_prompt_instruction()
     assert "Variable Binding Engine: Dot Notation" in instruction

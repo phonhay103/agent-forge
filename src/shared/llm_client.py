@@ -53,21 +53,16 @@ def get_llm_client(model_name: str = "gemini-2.5-flash", temperature: float = 0.
     elif mapped_provider == "anthropic" and not os.getenv("ANTHROPIC_API_KEY"):
         raise ValueError("ANTHROPIC_API_KEY environment variable is required to instantiate the Anthropic LLM client.")
     elif mapped_provider == "openrouter" and not os.getenv("OPENROUTER_API_KEY"):
-        raise ValueError("OPENROUTER_API_KEY environment variable is required to instantiate the OpenRouter LLM client.")
+        raise ValueError(
+            "OPENROUTER_API_KEY environment variable is required to instantiate the OpenRouter LLM client."
+        )
 
     # Initialize the chat model natively and agnostically
-    return init_chat_model(
-        model=name,
-        model_provider=mapped_provider,
-        temperature=temperature
-    )
+    return init_chat_model(model=name, model_provider=mapped_provider, temperature=temperature)
 
 
 def get_structured_llm_client(
-    schema: Any,
-    model_name: str = "gemini-2.5-flash",
-    temperature: float = 0.0,
-    base_model: Any | None = None
+    schema: Any, model_name: str = "gemini-2.5-flash", temperature: float = 0.0, base_model: Any | None = None
 ) -> Any:
     """
     Centralized factory for structured LLM clients.
@@ -83,7 +78,7 @@ def run_structured_llm(
     schema: Any,
     model_name: str = "gemini-2.5-flash",
     temperature: float = 0.0,
-    base_model: Any | None = None
+    base_model: Any | None = None,
 ) -> Any:
     """
     Centralized execution of structured LLM chains.
@@ -93,23 +88,19 @@ def run_structured_llm(
     from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 
     if "user_query" in prompt_variables:
-        prompt_template = ChatPromptTemplate([
-            SystemMessage(content=prompt_text),
-            HumanMessagePromptTemplate.from_template("{user_query}")
-        ])
+        prompt_template = ChatPromptTemplate(
+            [SystemMessage(content=prompt_text), HumanMessagePromptTemplate.from_template("{user_query}")]
+        )
     else:
         from langchain_core.messages import HumanMessage
-        prompt_template = ChatPromptTemplate([
-            SystemMessage(content=prompt_text),
-            HumanMessage(content="Generate the requested structured output.")
-        ])
+
+        prompt_template = ChatPromptTemplate(
+            [SystemMessage(content=prompt_text), HumanMessage(content="Generate the requested structured output.")]
+        )
 
     # Resolve structured model client
     structured_llm = get_structured_llm_client(
-        schema=schema,
-        model_name=model_name,
-        temperature=temperature,
-        base_model=base_model
+        schema=schema, model_name=model_name, temperature=temperature, base_model=base_model
     )
 
     # Build and run the LCEL pipeline chain

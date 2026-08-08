@@ -102,4 +102,3 @@ def test_custom_binding_engine_registration():
 
     res = custom_engine.evaluate("msg", {"msg": "hello world"})
     assert res.value == "HELLO WORLD"
-

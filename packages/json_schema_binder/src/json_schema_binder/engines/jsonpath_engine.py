@@ -31,10 +31,13 @@ class JSONPathBindingEngine(BaseBindingEngine):
 
     @override
     def evaluate(self, expression: str, source_data: Any) -> EvaluationResult[Any]:
-        data = BindingContext.from_dict(source_data).data if isinstance(source_data, (dict, BindingContext, Mapping)) else source_data
+        data = (
+            BindingContext.from_dict(source_data).data
+            if isinstance(source_data, (dict, BindingContext, Mapping))
+            else source_data
+        )
         if hasattr(source_data, "model_dump") and not isinstance(source_data, (dict, BindingContext)):
             data = source_data.model_dump()
-
 
         expr = expression.strip()
         if not expr.startswith("$"):
@@ -116,11 +119,9 @@ class JSONPathBindingEngine(BaseBindingEngine):
         return (
             "Variable Binding Engine: JSONPath\n"
             "To reference and transform values from the source context data, write direct JSONPath expressions "
-            "(e.g., \"$.products[?(@.price > 500)].name\", \"$.regions[*].warehouse_matrix.*\", \"$.items[0]\")."
+            '(e.g., "$.products[?(@.price > 500)].name", "$.regions[*].warehouse_matrix.*", "$.items[0]").'
         )
 
     @override
     def get_regex_pattern(self) -> str:
         return r"^(\$?\.?[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+|\[.*?\])*)$"
-
-

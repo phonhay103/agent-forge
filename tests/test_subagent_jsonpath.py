@@ -11,14 +11,7 @@ class DummyModel(BaseModel):
 
 def test_jsonpath_valid_key():
     engine = JSONPathBindingEngine()
-    context = {
-        "step_1": {
-            "key1": "value1",
-            "nested": {
-                "key2": "value2"
-            }
-        }
-    }
+    context = {"step_1": {"key1": "value1", "nested": {"key2": "value2"}}}
     resolved = engine.evaluate("step_1.key1", context).value
     assert resolved == "value1", f"Expected 'value1', got {resolved}"
     print("test_jsonpath_valid_key passed")
@@ -26,13 +19,7 @@ def test_jsonpath_valid_key():
 
 def test_jsonpath_with_nested_objects():
     engine = JSONPathBindingEngine()
-    context = {
-        "step_1": {
-            "nested": {
-                "key2": "value2"
-            }
-        }
-    }
+    context = {"step_1": {"nested": {"key2": "value2"}}}
     resolved = engine.evaluate("step_1.nested.key2", context).value
     assert resolved == "value2", f"Expected 'value2', got {resolved}"
     print("test_jsonpath_with_nested_objects passed")
@@ -40,14 +27,10 @@ def test_jsonpath_with_nested_objects():
 
 def test_jsonpath_with_pydantic_model():
     engine = JSONPathBindingEngine()
-    context = {
-        "step_2": DummyModel(value=42)
-    }
+    context = {"step_2": DummyModel(value=42)}
     resolved = engine.evaluate("step_2.value", context).value
     assert resolved == 42, f"Expected 42, got {resolved}"
     print("test_jsonpath_with_pydantic_model passed")
-
-
 
 
 if __name__ == "__main__":

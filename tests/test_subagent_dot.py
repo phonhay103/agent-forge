@@ -12,13 +12,7 @@ class DummyModel(BaseModel):
 
 def test_dot_notation_valid_key():
     engine = DotNotationBindingEngine()
-    context = {
-        "step_1": {
-            "result": {
-                "user": "Alice"
-            }
-        }
-    }
+    context = {"step_1": {"result": {"user": "Alice"}}}
     resolved = engine.evaluate("step_1.result.user", context).value
     assert resolved == "Alice", f"Expected 'Alice', got {resolved}"
     print("test_dot_notation_valid_key passed")
@@ -26,11 +20,7 @@ def test_dot_notation_valid_key():
 
 def test_dot_notation_with_lists():
     engine = DotNotationBindingEngine()
-    context = {
-        "step_1": {
-            "items": ["a", "b", "c"]
-        }
-    }
+    context = {"step_1": {"items": ["a", "b", "c"]}}
     resolved = engine.evaluate("step_1.items.1", context).value
     assert resolved == "b", f"Expected 'b', got {resolved}"
     print("test_dot_notation_with_lists passed")
@@ -38,14 +28,10 @@ def test_dot_notation_with_lists():
 
 def test_dot_notation_with_pydantic_model():
     engine = DotNotationBindingEngine()
-    context = {
-        "step_1": DummyModel(id=10, name="TestUser")
-    }
+    context = {"step_1": DummyModel(id=10, name="TestUser")}
     resolved = engine.evaluate("step_1.name", context).value
     assert resolved == "TestUser", f"Expected 'TestUser', got {resolved}"
     print("test_dot_notation_with_pydantic_model passed")
-
-
 
 
 if __name__ == "__main__":

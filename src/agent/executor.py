@@ -26,7 +26,7 @@ PROMPTS_DIR = pathlib.Path(__file__).parent / "prompts"
 def _extract_task_references(args: Any) -> set[str]:
     refs = set()
     if isinstance(args, str):
-        for match in re.findall(r'\$task_[a-zA-Z0-9_]+', args):
+        for match in re.findall(r"\$task_[a-zA-Z0-9_]+", args):
             refs.add(match)
     elif isinstance(args, dict):
         for v in args.values():
@@ -40,7 +40,7 @@ def _extract_task_references(args: Any) -> set[str]:
 def _rename_task_references(args: Any, id_map: dict[str, str]) -> Any:
     if isinstance(args, str):
         for old, new in id_map.items():
-            args = re.sub(r'\$' + re.escape(old) + r'\b', '$' + new, args)
+            args = re.sub(r"\$" + re.escape(old) + r"\b", "$" + new, args)
         return args
     elif isinstance(args, dict):
         return {k: _rename_task_references(v, id_map) for k, v in args.items()}
@@ -61,6 +61,7 @@ class StaticExecutor:
         self.binding_failed_token = binding_failed_token or DEFAULT_BINDING_FAILED_TOKEN
 
         from src.agent.planner import StaticPlanner
+
         self.planner = StaticPlanner(model=model)
 
         if isinstance(binding_engine, str):
@@ -149,10 +150,7 @@ class StaticExecutor:
 
             logger.debug(f"Resolved call arguments for tool '{task.tool_name}': {resolved_args}")
 
-            result = await self.session.call_tool(
-                name=task.tool_name,
-                arguments=resolved_args
-            )
+            result = await self.session.call_tool(name=task.tool_name, arguments=resolved_args)
 
             content = result.content[0].text
             try:
@@ -167,7 +165,7 @@ class StaticExecutor:
             self.task_schemas_store[task.id] = {
                 "tool_name": task.tool_name,
                 "input_schema": target_tool_input_schema,
-                "output_schema": target_tool_metadata.output_schema if target_tool_metadata else {}
+                "output_schema": target_tool_metadata.output_schema if target_tool_metadata else {},
             }
 
         logger.info("Execution of static plan completed successfully.")
@@ -209,10 +207,12 @@ class DynamicExecutor:
         self.prompt = prompt
 
         from src.agent.planner import DynamicPlanner
+
         self.planner = DynamicPlanner(model=model, model_name=model_name, prompt=prompt)
 
         # Default LLM runner for binder using injected model/model_name
         from src.shared.llm_client import run_structured_llm
+
         def default_llm_runner(variables: dict[str, Any], schema: Any) -> Any:
             prompt_composer = prompt or PromptComposer.from_file("bind_prompt_dynamic.yaml", PROMPTS_DIR)
             prompt_composer.set_variables(variables)
@@ -224,6 +224,7 @@ class DynamicExecutor:
                 model_name=model_name,
                 base_model=model,
             )
+
         self.binder = DynamicDataBinder(llm_runner=default_llm_runner)
         self.task_schemas_store: dict[str, Any] = {}
 
@@ -243,11 +244,7 @@ class DynamicExecutor:
 
             mode = self.dynamic_binding_mode
 
-            dependency_context = {
-                dep_id: ctx.store[dep_id]
-                for dep_id in task.depends_on
-                if dep_id in ctx.store
-            }
+            dependency_context = {dep_id: ctx.store[dep_id] for dep_id in task.depends_on if dep_id in ctx.store}
 
             if mode == DynamicBindingMode.LLM_DIRECT:
                 # LLM DIRECT BINDING
@@ -271,7 +268,7 @@ class DynamicExecutor:
                         expected_source_schema = {
                             "type": "object",
                             "properties": expected_schemas,
-                            "required": list(expected_schemas.keys())
+                            "required": list(expected_schemas.keys()),
                         }
 
                 # Determine planned path based on mode
@@ -297,10 +294,7 @@ class DynamicExecutor:
 
             logger.debug(f"Resolved call arguments for tool '{task.tool_name}': {resolved_args}")
 
-            result = await self.session.call_tool(
-                name=task.tool_name,
-                arguments=resolved_args
-            )
+            result = await self.session.call_tool(name=task.tool_name, arguments=resolved_args)
 
             content = result.content[0].text
             try:
@@ -315,7 +309,7 @@ class DynamicExecutor:
             self.task_schemas_store[task.id] = {
                 "tool_name": task.tool_name,
                 "input_schema": target_tool_input_schema,
-                "output_schema": target_tool_metadata.output_schema if target_tool_metadata else {}
+                "output_schema": target_tool_metadata.output_schema if target_tool_metadata else {},
             }
 
         logger.info("Execution of dynamic plan completed successfully.")

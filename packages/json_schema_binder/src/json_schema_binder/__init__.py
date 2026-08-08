@@ -84,5 +84,3 @@ __all__ = [
     "resolve_variables",
     "transform_schema",
 ]
-
-

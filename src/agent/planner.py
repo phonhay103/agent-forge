@@ -46,13 +46,11 @@ class StaticPlanner:
 
         plan_obj: StaticPlan = run_structured_llm(
             prompt_text=prompt_text,
-            prompt_variables={
-                "user_query": user_query
-            },
+            prompt_variables={"user_query": user_query},
             schema=StaticPlan,
             model_name=self.model_name,
             temperature=0.0,
-            base_model=self.model
+            base_model=self.model,
         )
 
         if regex_pattern:

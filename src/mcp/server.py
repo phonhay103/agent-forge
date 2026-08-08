@@ -31,38 +31,45 @@ from src.mcp.schema.models import (
 
 mcp = FastMCP("agent-server")
 
+
 @mcp.tool()
 def search(input: SearchInput) -> SearchOutput:
     return tools.search_products(input)
+
 
 @mcp.tool()
 def convert_currency(input: ConvertCurrencyInput) -> ConvertCurrencyOutput:
     return tools.convert_currency(input)
 
+
 @mcp.tool()
 def apply_discount(input: ApplyDiscountInput) -> ApplyDiscountOutput:
     return tools.apply_discount(input)
+
 
 @mcp.tool()
 def compare_data(input: CompareInput) -> CompareOutput:
     return tools.compare_products(input)
 
+
 @mcp.tool()
 def calculate(input: CalculateInput) -> CalculateOutput:
     return tools.calculate_total_value(input)
+
 
 @mcp.tool()
 def analyze_supply_chain(input: SupplyChainInput) -> SupplyChainOutput:
     return tools.analyze_supply_chain(input)
 
+
 @mcp.tool()
 def process_org_structure(input: OrgStructureInput) -> OrgStructureOutput:
     return tools.process_org_structure(input)
 
+
 @mcp.tool()
 def evaluate_nested_curriculum(input: CurriculumInput) -> CurriculumOutput:
     return tools.evaluate_nested_curriculum(input)
-
 
 
 if __name__ == "__main__":

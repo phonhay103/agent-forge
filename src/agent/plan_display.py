@@ -7,7 +7,7 @@ def _extract_task_references(args: Any) -> set[str]:
     """Extract all $task_xxx references from args recursively."""
     refs = set()
     if isinstance(args, str):
-        for match in re.findall(r'\$task_[a-zA-Z0-9_]+', args):
+        for match in re.findall(r"\$task_[a-zA-Z0-9_]+", args):
             refs.add(match)
     elif isinstance(args, dict):
         for v in args.values():
@@ -16,6 +16,7 @@ def _extract_task_references(args: Any) -> set[str]:
         for item in args:
             refs.update(_extract_task_references(item))
     return refs
+
 
 def _simplify_schema(schema: dict[str, Any], max_depth: int = 2) -> dict[str, Any]:
     """Simplify a JSON schema into a human-readable summary of key: type."""
@@ -42,11 +43,13 @@ def _simplify_schema(schema: dict[str, Any], max_depth: int = 2) -> dict[str, An
             result[key] = prop.get("title", prop_type)
     return result
 
+
 def _format_json_indented(data: Any, indent: int = 4) -> str:
     """Format data as indented JSON string with prefix padding."""
     prefix = " " * indent
     lines = json.dumps(data, indent=2, ensure_ascii=False).split("\n")
     return "\n".join(f"{prefix}{line}" for line in lines)
+
 
 def format_plan_display(
     plan: Any,
@@ -69,7 +72,7 @@ def format_plan_display(
         if plan.reason:
             reason_text = plan.reason
             max_width = 58
-            wrapped = [reason_text[i:i + max_width] for i in range(0, len(reason_text), max_width)]
+            wrapped = [reason_text[i : i + max_width] for i in range(0, len(reason_text), max_width)]
             for line in wrapped:
                 lines.append(f"\u2551 {line:<60} \u2551")
         lines.append(f"\u2551 Total Tasks: {total} \u2502 Binding: LLM Runtime Schema-Match{'':<10}\u2551")
@@ -125,7 +128,7 @@ def format_plan_display(
         if plan.reason:
             reason_text = plan.reason
             max_width = 58
-            wrapped = [reason_text[i:i + max_width] for i in range(0, len(reason_text), max_width)]
+            wrapped = [reason_text[i : i + max_width] for i in range(0, len(reason_text), max_width)]
             for line in wrapped:
                 lines.append(f"║ {line:<60} ║")
         lines.append(f"║ Total Tasks: {total:<2} │ Engine: {binding_type.upper():<10}{' ' * 24}║")

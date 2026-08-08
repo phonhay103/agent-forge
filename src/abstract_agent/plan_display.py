@@ -12,7 +12,7 @@ def format_plan_display(plan: Any, _tools_metadata: list[dict[str, Any]]) -> str
     if plan.reason:
         reason_text = plan.reason
         max_width = 58
-        wrapped = [reason_text[i:i + max_width] for i in range(0, len(reason_text), max_width)]
+        wrapped = [reason_text[i : i + max_width] for i in range(0, len(reason_text), max_width)]
         for line in wrapped:
             lines.append(f"\u2551 {line:<60} \u2551")
     lines.append(f"\u2551 Total Tasks: {total} \u2502 Binding: LLM Runtime (Tool + Data){'':<8}\u2551")
