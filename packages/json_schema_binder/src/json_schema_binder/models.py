@@ -1,11 +1,11 @@
 from collections.abc import Mapping
-from typing import Any, Generic, TypeVar, Union
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
-PrimitiveType = Union[str, int, float, bool, bytes, None]
-ComplexType = Union[dict[str, Any], list[Any], BaseModel]
-SupportedDataType = Union[PrimitiveType, ComplexType]
+PrimitiveType = str | int | float | bool | bytes | None
+ComplexType = dict[str, Any] | list[Any] | BaseModel
+SupportedDataType = PrimitiveType | ComplexType
 
 T = TypeVar("T")
 
@@ -26,7 +26,7 @@ class BindingContext(BaseModel):
     )
 
     @classmethod
-    def from_dict(cls, raw_context: Union["BindingContext", Mapping[str, Any]]) -> "BindingContext":
+    def from_dict(cls, raw_context: "BindingContext" | Mapping[str, Any]) -> "BindingContext":
         if isinstance(raw_context, BindingContext):
             return raw_context
 

@@ -25,14 +25,14 @@ agent-dynamic:
 agent-abstract:
     uv run python -m src.abstract_agent
 
-# Run lint checks with Ruff (with auto-fix) and MyPy on the rendering engine
+# Run lint checks with Ruff (with auto-fix) and ty on the repository
 lint:
-    uv run ruff check --fix packages/prompt_composer/src/prompt_composer/renderers/
-    uv run mypy packages/prompt_composer/src/prompt_composer/renderers/
+    uv run ruff check --fix .
+    uv run ty check
 
-# Format code using Ruff formatter on the rendering engine
+# Format code using Ruff formatter on the repository
 format:
-    uv run ruff format packages/prompt_composer/src/prompt_composer/renderers/
+    uv run ruff format .
 
 # Run all unit tests with pytest
 test:

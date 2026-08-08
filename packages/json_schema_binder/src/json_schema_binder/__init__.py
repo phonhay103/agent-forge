@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Dict, Optional, Type, TypeVar, Union
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
@@ -52,7 +52,7 @@ def resolve_variables(
     payload: T,
     context: BindingContext | Mapping[str, Any],
     engine: str | BaseBindingEngine = "jmespath",
-    target_schema: dict[str, Any] | type[BaseModel] | None = None,
+    target_schema: dict[str, Any] | type[BaseModel] | None = None,  # noqa: ARG001
 ) -> Any:
     """
     Convenience function to resolve variable expressions ($var...) in a template payload.

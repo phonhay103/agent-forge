@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from enum import Enum
+from collections.abc import Callable
+from enum import StrEnum
 from typing import Any, TypeVar
 
 from pydantic import BaseModel
@@ -13,7 +14,7 @@ from json_schema_binder.models import (
 T = TypeVar("T")
 
 
-class BindingType(str, Enum):
+class BindingType(StrEnum):
     JMESPATH = "jmespath"
     JSONPATH = "jsonpath"
     DOT_NOTATION = "dot_notation"
@@ -22,9 +23,9 @@ class BindingType(str, Enum):
 _BINDING_ENGINES_REGISTRY: dict[str, Any] = {}
 
 
-def register_binding_engine(name: str):
+def register_binding_engine(name: str) -> Callable[[Any], Any]:
     """Decorator to register a concrete binding engine class."""
-    def decorator(cls):
+    def decorator(cls: Any) -> Any:
         _BINDING_ENGINES_REGISTRY[name.lower().strip()] = cls
         return cls
     return decorator

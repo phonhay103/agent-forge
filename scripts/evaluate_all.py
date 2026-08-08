@@ -90,7 +90,7 @@ async def run_single_test(
     return report
 
 
-async def main():
+async def main() -> None:
     parser = argparse.ArgumentParser(description="Run Evaluation Suite for MCP Headless Core.")
     parser.add_argument(
         "--engine", "-e",

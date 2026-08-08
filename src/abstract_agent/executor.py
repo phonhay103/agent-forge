@@ -37,7 +37,7 @@ class AbstractExecutor:
         model_name: str = "gemini-2.5-flash",
         tool_resolver_prompt: PromptComposer | None = None,
         bind_prompt: PromptComposer | None = None,
-    ):
+    ) -> None:
         self.session = session
         self.model_name = model_name
         if model is None:
@@ -50,8 +50,7 @@ class AbstractExecutor:
     async def run_plan(self, plan: AbstractPlan) -> ExecutionContext:
         ctx = ExecutionContext()
 
-        tools_res = await self.session.list_tools()
-        tools_list = tools_res.tools if hasattr(tools_res, "tools") else tools_res
+        tools_list = await self.session.list_tools()
         tools_map = {t.name: t for t in tools_list}
         tools_metadata = [
             {
@@ -107,9 +106,13 @@ class AbstractExecutor:
             )
 
             # Auto-wrap in {"input": ...} if needed
-            if target_input_schema and "input" in target_input_schema.get("properties", {}):
-                if isinstance(resolved_args, dict) and "input" not in resolved_args:
-                    resolved_args = {"input": resolved_args}
+            if (
+                target_input_schema
+                and "input" in target_input_schema.get("properties", {})
+                and isinstance(resolved_args, dict)
+                and "input" not in resolved_args
+            ):
+                resolved_args = {"input": resolved_args}
 
             result = await self.session.call_tool(
                 name=selected_tool_name,
@@ -132,7 +135,7 @@ class AbstractExecutor:
         intent: str,
         expected_input: str | None,
         expected_output: str | None,
-        available_tools: list[dict],
+        available_tools: list[dict[str, Any]],
     ) -> ToolSelection:
         """Use LLM to match intent to the best available tool."""
         prompt = self.tool_resolver_prompt or PromptComposer.from_file("tool_resolver_prompt.yaml", PROMPTS_DIR)
@@ -156,11 +159,11 @@ class AbstractExecutor:
     def _llm_bind(
         self,
         tool_name: str,
-        input_schema: dict,
+        input_schema: dict[str, Any],
         intent: str,
         expected_input: str | None,
-        dependency_context: dict,
-    ) -> dict:
+        dependency_context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Use LLM to generate tool arguments."""
         prompt = self.bind_prompt or PromptComposer.from_file("abstract_bind_prompt.yaml", PROMPTS_DIR)
         prompt.set_variables({

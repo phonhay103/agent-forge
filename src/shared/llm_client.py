@@ -79,7 +79,7 @@ def get_structured_llm_client(
 
 def run_structured_llm(
     prompt_text: str,
-    prompt_variables: dict,
+    prompt_variables: dict[str, Any],
     schema: Any,
     model_name: str = "gemini-2.5-flash",
     temperature: float = 0.0,

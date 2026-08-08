@@ -17,7 +17,7 @@ def get_binding_engine(binding_type: str | BindingType = BindingType.JMESPATH) -
     if engine_class is not None:
         return engine_class()
 
-    supported_engines = sorted(list(_BINDING_ENGINES_REGISTRY.keys()))
+    supported_engines = sorted(_BINDING_ENGINES_REGISTRY.keys())
     raise ValueError(
         f"Unsupported binding_type: '{binding_type}'. "
         f"Supported registered binding types are: {supported_engines}"

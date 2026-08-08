@@ -10,7 +10,24 @@ To run this server standalone:
 from fastmcp import FastMCP
 
 import src.mcp.tools.business_tools as tools
-from src.mcp.schema.models import *
+from src.mcp.schema.models import (
+    ApplyDiscountInput,
+    ApplyDiscountOutput,
+    CalculateInput,
+    CalculateOutput,
+    CompareInput,
+    CompareOutput,
+    ConvertCurrencyInput,
+    ConvertCurrencyOutput,
+    CurriculumInput,
+    CurriculumOutput,
+    OrgStructureInput,
+    OrgStructureOutput,
+    SearchInput,
+    SearchOutput,
+    SupplyChainInput,
+    SupplyChainOutput,
+)
 
 mcp = FastMCP("agent-server")
 

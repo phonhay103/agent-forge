@@ -10,7 +10,7 @@ class MCPToolWrapper:
     Wrapper class around native mcp.types.Tool.
     Provides Pythonic snake_case properties and shields the core from camelCase fields.
     """
-    def __init__(self, tool: Tool):
+    def __init__(self, tool: Tool) -> None:
         self._tool = tool
 
     @property
@@ -18,16 +18,16 @@ class MCPToolWrapper:
         return self._tool.name
 
     @property
-    def description(self) -> str:
+    def description(self) -> str | None:
         return self._tool.description
 
     @property
-    def input_schema(self) -> dict:
+    def input_schema(self) -> dict[str, Any]:
         # Gracefully handle input schema access
         return getattr(self._tool, "inputSchema", {}) or {}
 
     @property
-    def output_schema(self) -> dict:
+    def output_schema(self) -> dict[str, Any]:
         # Gracefully handle output schema access
         return getattr(self._tool, "outputSchema", {}) or {}
 
@@ -38,7 +38,7 @@ class MCPSessionProtocol(Protocol):
     async def list_tools(self, *args: Any, **kwargs: Any) -> list[MCPToolWrapper]:
         ...
 
-    async def call_tool(self, name: str, arguments: dict, *args: Any, **kwargs: Any) -> Any:
+    async def call_tool(self, name: str, arguments: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
         ...
 
 class MCPClient:
@@ -46,7 +46,7 @@ class MCPClient:
     Client wrapper around native mcp.ClientSession.
     Ensures a clean interface delegation without exposing unnecessary session internals.
     """
-    def __init__(self, session: ClientSession):
+    def __init__(self, session: ClientSession) -> None:
         self._session = session
 
     async def list_tools(self, *args: Any, **kwargs: Any) -> list[MCPToolWrapper]:
@@ -55,5 +55,5 @@ class MCPClient:
             return [MCPToolWrapper(t) for t in result.tools]
         return []
 
-    async def call_tool(self, name: str, arguments: dict, *args: Any, **kwargs: Any) -> Any:
+    async def call_tool(self, name: str, arguments: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
         return await self._session.call_tool(name, arguments, *args, **kwargs)

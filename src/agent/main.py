@@ -23,7 +23,7 @@ def format_exception(e: BaseException) -> str:
     return f"{type(e).__name__}: {e}"
 
 
-async def run_unified_agent(dynamic_binding_mode: DynamicBindingMode | None, mode_title: str):
+async def run_unified_agent(dynamic_binding_mode: DynamicBindingMode | None, mode_title: str) -> None:
     load_dotenv()
 
     print("==================================================")
@@ -66,8 +66,10 @@ async def run_unified_agent(dynamic_binding_mode: DynamicBindingMode | None, mod
     print(f"\n--- Connecting to MCP Server at {MCP_SERVER_URL} ---")
 
     try:
-        async with streamablehttp_client(MCP_SERVER_URL) as (read, write, _):
-            async with ClientSession(read, write) as session:
+        async with (
+            streamablehttp_client(MCP_SERVER_URL) as (read, write, _),
+            ClientSession(read, write) as session,
+        ):
                 print("--- Discovering Tools via MCP Server ---")
                 await session.initialize()
                 tools_list = await session.list_tools()
@@ -132,21 +134,21 @@ async def run_unified_agent(dynamic_binding_mode: DynamicBindingMode | None, mod
         sys.exit(1)
 
 
-async def main_static():
+async def main_static() -> None:
     await run_unified_agent(
         dynamic_binding_mode=None,
         mode_title="Static Binding"
     )
 
 
-async def main_dynamic():
+async def main_dynamic() -> None:
     await run_unified_agent(
         dynamic_binding_mode=DynamicBindingMode.JMESPATH_VALIDATE,
         mode_title="Dynamic Binding"
     )
 
 
-async def main():
+async def main() -> None:
     print("Select Mode:")
     print("[1] Static Binding Mode")
     print("[2] Dynamic Binding Mode")

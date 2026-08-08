@@ -5,7 +5,7 @@ Run: python -m src.main  OR  make agent
 import asyncio
 
 
-async def main():
+async def main() -> None:
     print("==================================================")
     print("      MCP Multi-Agent System                      ")
     print("==================================================")

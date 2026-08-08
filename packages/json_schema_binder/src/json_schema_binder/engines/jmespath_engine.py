@@ -1,6 +1,7 @@
 import functools
+import re
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, override
 
 import jmespath
 from pydantic import BaseModel
@@ -16,11 +17,8 @@ from json_schema_binder.models import (
 T = TypeVar("T")
 
 
-import re
-
-
 @functools.lru_cache(maxsize=1024)
-def _get_compiled_jmespath(expr: str):
+def _get_compiled_jmespath(expr: str) -> Any:
     return jmespath.compile(expr)
 
 
@@ -87,7 +85,7 @@ def normalize_jmespath(expr: str) -> str:
 
     # 1. Fix double quotes wrapped around backticked literals, e.g.,
     # key: "`value`" or key: "`"value"`"
-    def replacer(match):
+    def replacer(match: re.Match[str]) -> str:
         key = match.group(1)
         val = match.group(2).strip()
         val_clean = val.strip('"\'')
@@ -116,9 +114,11 @@ def normalize_jmespath(expr: str) -> str:
 @register_binding_engine("jmes")
 class JMESPathBindingEngine(BaseBindingEngine):
     @property
+    @override
     def binding_type(self) -> BindingType:
         return BindingType.JMESPATH
 
+    @override
     def evaluate(self, expression: str, source_data: Any) -> EvaluationResult[Any]:
         data = BindingContext.from_dict(source_data).data if isinstance(source_data, (dict, BindingContext, Mapping)) else source_data
         if hasattr(source_data, "model_dump") and not isinstance(source_data, (dict, BindingContext)):
@@ -156,6 +156,7 @@ class JMESPathBindingEngine(BaseBindingEngine):
                 error=str(e),
             )
 
+    @override
     def transform(
         self,
         source_data: Any,
@@ -164,8 +165,8 @@ class JMESPathBindingEngine(BaseBindingEngine):
     ) -> MappingResult[Any]:
         spec = mapping_spec.field_mappings if isinstance(mapping_spec, MappingSpec) else mapping_spec
         output: dict[str, Any] = {}
-        unresolved: list = []
-        errors: list = []
+        unresolved: list[str] = []
+        errors: list[str] = []
 
         for target_field, expr in spec.items():
             res = self.evaluate(expr, source_data)
@@ -197,6 +198,7 @@ class JMESPathBindingEngine(BaseBindingEngine):
             errors=errors,
         )
 
+    @override
     def get_system_prompt_instruction(self) -> str:
         return (
             "Variable Binding Engine: JMESPath\n"
@@ -205,6 +207,7 @@ class JMESPathBindingEngine(BaseBindingEngine):
             "\"division_summaries | max_by(@, &total_budget)\", \"skus[0]\")."
         )
 
+    @override
     def get_regex_pattern(self) -> str:
         return r"^(\$?[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+|\[.*?\]|\s*\|\s*.*|\{.*?\})*)$"
 

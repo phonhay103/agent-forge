@@ -18,7 +18,7 @@ class VariableParser:
     @classmethod
     def has_unresolved_references(cls, v: Any) -> bool:
         """
-        Recursively checks if a payload (dict, list, string, or BaseModel) 
+        Recursively checks if a payload (dict, list, string, or BaseModel)
         contains any unresolved variable references.
         """
         if cls.is_variable_reference(v):

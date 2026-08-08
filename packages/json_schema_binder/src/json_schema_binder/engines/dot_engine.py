@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, override
 
 from pydantic import BaseModel
 
@@ -19,10 +19,11 @@ T = TypeVar("T")
 @register_binding_engine("standard")
 class DotNotationBindingEngine(BaseBindingEngine):
     @property
+    @override
     def binding_type(self) -> BindingType:
         return BindingType.DOT_NOTATION
 
-    def _traverse_path(self, curr: Any, keys: list) -> Any | None:
+    def _traverse_path(self, curr: Any, keys: list[str]) -> Any | None:
         for key in keys:
             if not key:
                 continue
@@ -40,6 +41,7 @@ class DotNotationBindingEngine(BaseBindingEngine):
                 return None
         return curr
 
+    @override
     def evaluate(self, expression: str, source_data: Any) -> EvaluationResult[Any]:
         data = BindingContext.from_dict(source_data).data if isinstance(source_data, (dict, BindingContext, Mapping)) else source_data
         if hasattr(source_data, "model_dump") and not isinstance(source_data, (dict, BindingContext)):
@@ -67,6 +69,7 @@ class DotNotationBindingEngine(BaseBindingEngine):
             engine=self.binding_type.value,
         )
 
+    @override
     def transform(
         self,
         source_data: Any,
@@ -75,8 +78,8 @@ class DotNotationBindingEngine(BaseBindingEngine):
     ) -> MappingResult[Any]:
         spec = mapping_spec.field_mappings if isinstance(mapping_spec, MappingSpec) else mapping_spec
         output: dict[str, Any] = {}
-        unresolved: list = []
-        errors: list = []
+        unresolved: list[str] = []
+        errors: list[str] = []
 
         for target_field, expr in spec.items():
             res = self.evaluate(expr, source_data)
@@ -106,6 +109,7 @@ class DotNotationBindingEngine(BaseBindingEngine):
             errors=errors,
         )
 
+    @override
     def get_system_prompt_instruction(self) -> str:
         return (
             "Variable Binding Engine: Dot Notation\n"
@@ -116,6 +120,7 @@ class DotNotationBindingEngine(BaseBindingEngine):
             "- Variable bindings MUST be simple dot-separated paths containing only letters, numbers, underscores, and zero-based numeric array indices (e.g. '$step_1.items' or '$step_1.items.0.price')."
         )
 
+    @override
     def get_regex_pattern(self) -> str:
         return r"^(\$?[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*)$"
 

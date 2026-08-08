@@ -1,5 +1,5 @@
 import re
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from pydantic import BaseModel
 
@@ -15,7 +15,7 @@ class TemplateResolver:
     Decoupled utility for parsing template payloads containing variable expressions (e.g. '$user.name')
     and delegating evaluation directly to a binding engine's evaluate() method.
     """
-    def __init__(self, engine: str | BaseBindingEngine = "jmespath"):
+    def __init__(self, engine: str | BaseBindingEngine = "jmespath") -> None:
         self.engine = get_binding_engine(engine) if isinstance(engine, str) else engine
 
     def resolve_payload(self, payload: T, source_data: Any) -> T:
@@ -62,7 +62,7 @@ class TemplateResolver:
             except Exception:
                 return resolved_dict
         elif isinstance(payload, dict):
-            return {k: self.resolve_payload(v, data) for k, v in payload.items()}
+            return cast(T, {k: self.resolve_payload(v, data) for k, v in payload.items()})
         elif isinstance(payload, list):
-            return [self.resolve_payload(v, data) for v in payload]
+            return cast(T, [self.resolve_payload(v, data) for v in payload])
         return payload

@@ -28,7 +28,7 @@ def format_exception(e: BaseException) -> str:
     return f"{type(e).__name__}: {e}"
 
 
-async def main():
+async def main() -> None:
     load_dotenv()
 
     print("==================================================")
@@ -54,8 +54,10 @@ async def main():
     print(f"\n--- Connecting to MCP Server at {MCP_SERVER_URL} ---")
 
     try:
-        async with streamablehttp_client(MCP_SERVER_URL) as (read, write, _):
-            async with ClientSession(read, write) as session:
+        async with (
+            streamablehttp_client(MCP_SERVER_URL) as (read, write, _),
+            ClientSession(read, write) as session,
+        ):
                 print("--- Discovering Tools via MCP Server ---")
                 await session.initialize()
                 tools_list = await session.list_tools()

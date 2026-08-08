@@ -19,7 +19,7 @@ class StaticPlanner:
         model_name: str = "gemini-3.5-flash",
         binding_failed_token: str | None = None,
         prompt: PromptComposer | None = None,
-    ):
+    ) -> None:
         self.model = model
         self.model_name = model_name
         self.binding_failed_token = binding_failed_token or DEFAULT_BINDING_FAILED_TOKEN
@@ -67,7 +67,7 @@ class DynamicPlanner:
         model: Any | None = None,
         model_name: str = "gemini-2.5-flash",
         prompt: PromptComposer | None = None,
-    ):
+    ) -> None:
         self.model = model
         self.model_name = model_name
         self.prompt = prompt

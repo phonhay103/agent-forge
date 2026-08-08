@@ -1,7 +1,7 @@
 from typing import Any
 
 
-def format_plan_display(plan: Any, tools_metadata: list[dict[str, Any]]) -> str:
+def format_plan_display(plan: Any, _tools_metadata: list[dict[str, Any]]) -> str:
     """Format an Abstract Plan for terminal display."""
     total = len(plan.tasks)
     lines: list[str] = []

@@ -173,4 +173,5 @@ async def test_complex_pipeline():
         logger.info(f"MCP Server connection failed ({e}). Skipping live pipeline test.")
 
 if __name__ == "__main__":
-    anyio.run(run_complex_pipeline)
+    anyio.run(test_complex_pipeline)
+

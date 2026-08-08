@@ -1,6 +1,6 @@
 import functools
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, override
 
 from jsonpath_ng.ext import parse
 from pydantic import BaseModel
@@ -17,7 +17,7 @@ T = TypeVar("T")
 
 
 @functools.lru_cache(maxsize=1024)
-def _get_compiled_jsonpath(expr: str):
+def _get_compiled_jsonpath(expr: str) -> Any:
     return parse(expr)
 
 
@@ -25,9 +25,11 @@ def _get_compiled_jsonpath(expr: str):
 @register_binding_engine("json_path")
 class JSONPathBindingEngine(BaseBindingEngine):
     @property
+    @override
     def binding_type(self) -> BindingType:
         return BindingType.JSONPATH
 
+    @override
     def evaluate(self, expression: str, source_data: Any) -> EvaluationResult[Any]:
         data = BindingContext.from_dict(source_data).data if isinstance(source_data, (dict, BindingContext, Mapping)) else source_data
         if hasattr(source_data, "model_dump") and not isinstance(source_data, (dict, BindingContext)):
@@ -36,10 +38,7 @@ class JSONPathBindingEngine(BaseBindingEngine):
 
         expr = expression.strip()
         if not expr.startswith("$"):
-            if expr.startswith("."):
-                expr = "$" + expr
-            else:
-                expr = "$." + expr
+            expr = "$" + expr if expr.startswith(".") else "$." + expr
 
         try:
             jsonpath_expr = _get_compiled_jsonpath(expr)
@@ -70,6 +69,7 @@ class JSONPathBindingEngine(BaseBindingEngine):
                 error=str(e),
             )
 
+    @override
     def transform(
         self,
         source_data: Any,
@@ -78,8 +78,8 @@ class JSONPathBindingEngine(BaseBindingEngine):
     ) -> MappingResult[Any]:
         spec = mapping_spec.field_mappings if isinstance(mapping_spec, MappingSpec) else mapping_spec
         output: dict[str, Any] = {}
-        unresolved: list = []
-        errors: list = []
+        unresolved: list[str] = []
+        errors: list[str] = []
 
         for target_field, expr in spec.items():
             res = self.evaluate(expr, source_data)
@@ -111,6 +111,7 @@ class JSONPathBindingEngine(BaseBindingEngine):
             errors=errors,
         )
 
+    @override
     def get_system_prompt_instruction(self) -> str:
         return (
             "Variable Binding Engine: JSONPath\n"
@@ -118,6 +119,7 @@ class JSONPathBindingEngine(BaseBindingEngine):
             "(e.g., \"$.products[?(@.price > 500)].name\", \"$.regions[*].warehouse_matrix.*\", \"$.items[0]\")."
         )
 
+    @override
     def get_regex_pattern(self) -> str:
         return r"^(\$?\.?[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+|\[.*?\])*)$"
 

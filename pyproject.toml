@@ -22,7 +22,7 @@ dependencies = [
 dev = [
     "pytest>=9.1.1",
     "ruff>=0.3.0",
-    "mypy>=1.9.0",
+    "ty>=0.0.69",
 ]
 
 [tool.uv.workspace]
@@ -35,7 +35,7 @@ prompt-composer = { workspace = true }
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
@@ -47,18 +47,22 @@ select = [
     "C4",    # flake8-comprehensions
     "UP",    # pyupgrade
     "ARG",   # flake8-unused-arguments
-    "ANN",   # flake8-annotations (ngăn chặn Any qua ANN401)
-    "S",     # flake8-bandit (bảo mật)
-    "SIM",   # flake8-simplify (tối ưu hóa logic)
+    "ANN",   # flake8-annotations (prevent Any via ANN401)
+    "S",     # flake8-bandit (security)
+    "SIM",   # flake8-simplify (simplify logic)
     "RUF",   # Ruff specific rules
 ]
 ignore = [
-    "ANN002", # Không bắt buộc định kiểu cho *args
-    "ANN003", # Không bắt buộc định kiểu cho **kwargs
+    "ANN002", # Do not require type annotation for *args
+    "ANN003", # Do not require type annotation for **kwargs
+    "ANN401", # Dynamically typed expressions (typing.Any) are allowed
     
-    # --- Giải quyết xung đột với Formatter ---
-    "COM812", # Bỏ qua cảnh báo thiếu dấu phẩy đuôi (để formatter tự xử lý)
-    "ISC002", # Bỏ qua cảnh báo nối chuỗi ẩn
+    # --- Resolve conflicts with Formatter ---
+    "COM812", # Ignore missing trailing comma warnings (handled by formatter)
+    "ISC002", # Ignore implicit string concatenation warnings
+
+    # --- Design philosophy optimizing ruff format ---
+    "E501",   # Ignore line length limit (delegated to ruff format)
 ]
 
 [tool.ruff.lint.flake8-annotations]
@@ -70,52 +74,22 @@ combine-as-imports = true
 known-first-party = ["prompt_composer", "json_schema_binder"]
 
 [tool.ruff.lint.per-file-ignores]
-# Cho phép dùng assert trong kiểm thử, nới lỏng định kiểu
-"tests/**/*.py" = ["S101", "ANN", "ARG"]
-"packages/*/tests/**/*.py" = ["S101", "ANN", "ARG"]
+# Allow assert in testing, relax type annotation requirements
+"tests/**/*.py" = ["S101", "ANN", "ARG", "E402", "SIM117", "RUF059"]
+"packages/*/tests/**/*.py" = ["S101", "ANN", "ARG", "E402", "SIM117", "RUF059", "W293", "I001"]
 
-# Bảo vệ các tệp khởi tạo gói khỏi việc tự động xóa import xuất khẩu
+# Protect package initialization files from unused imports (keep exported imports)
 "__init__.py" = ["F401"]
 
-# Nới lỏng kiểm tra cho các tệp legacy của prompt_composer để giữ CI xanh
-"packages/prompt_composer/src/prompt_composer/formats/**/*.py" = ["ANN", "ARG002", "B905"]
-"packages/prompt_composer/src/prompt_composer/parsers/**/*.py" = ["ANN"]
-"packages/prompt_composer/src/prompt_composer/composer.py" = ["ANN"]
-"packages/prompt_composer/src/prompt_composer/section.py" = ["ANN", "S105", "SIM108"]
-"packages/prompt_composer/templates/**/*.py" = ["ANN"]
+# Relax checks for scripts/ files
+"scripts/**/*.py" = ["SIM", "ARG"]
 
 
-[tool.mypy]
-python_version = "3.10"
-strict = true
-disallow_any_explicit = true  # Ngăn chặn sử dụng Any một cách tường minh
-ignore_missing_imports = true
-exclude = [
-    "tests",
-    "packages/prompt_composer/tests",
-]
+[tool.ty]
 
-[[tool.mypy.overrides]]
-module = "json_schema_binder.*"
-ignore_errors = true
+[tool.ty.src]
+include = ["src", "packages/prompt_composer/src", "packages/json_schema_binder/src"]
+exclude = ["packages/prompt_composer/src/prompt_composer/formats/**"]
 
-[[tool.mypy.overrides]]
-module = "shared.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "executor.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "abstract_agent.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "agent.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "mcp.*"
-ignore_errors = true
-
+[tool.ty.rules]
+all = "error"

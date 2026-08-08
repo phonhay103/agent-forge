@@ -1,16 +1,16 @@
 import re
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
-class BindingType(str, Enum):
+class BindingType(StrEnum):
     DOT = "dot"
     JSONPATH = "jsonpath"
     JMESPATH = "jmespath"
 
-class DynamicBindingMode(str, Enum):
+class DynamicBindingMode(StrEnum):
     JMESPATH_VALIDATE = "jmespath_validate"
     LLM_DIRECT = "llm_direct"
 
@@ -22,7 +22,7 @@ def _validate_args_pattern_helper(v: dict[str, Any] | None, info: ValidationInfo
         return v
     regex = re.compile(regex_pattern)
 
-    def _check_value(val: Any):
+    def _check_value(val: Any) -> None:
         if isinstance(val, str) and val.startswith("$") and not val.startswith("__BINDING_FAILED"):
             if not regex.match(val):
                 raise ValueError(

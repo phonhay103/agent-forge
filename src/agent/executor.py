@@ -23,7 +23,7 @@ DEFAULT_BINDING_FAILED_TOKEN = os.getenv("BINDING_FAILED_TOKEN", "__BINDING_FAIL
 PROMPTS_DIR = pathlib.Path(__file__).parent / "prompts"
 
 
-def _extract_task_references(args: Any) -> set:
+def _extract_task_references(args: Any) -> set[str]:
     refs = set()
     if isinstance(args, str):
         for match in re.findall(r'\$task_[a-zA-Z0-9_]+', args):
@@ -56,7 +56,7 @@ class StaticExecutor:
         binding_engine: str | BaseBindingEngine = "jmespath",
         model: Any | None = None,
         binding_failed_token: str | None = None,
-    ):
+    ) -> None:
         self.session = session
         self.binding_failed_token = binding_failed_token or DEFAULT_BINDING_FAILED_TOKEN
 
@@ -86,9 +86,8 @@ class StaticExecutor:
                     ref_name = ref.lstrip("$")
                     if ref_name not in actual_ids:
                         candidates = [aid for aid in actual_ids[:idx] if aid in ref_name or ref_name in aid]
-                        if not candidates:
-                            if idx == 1:
-                                candidates = [plan.tasks[0].id]
+                        if not candidates and idx == 1:
+                            candidates = [plan.tasks[0].id]
                         if candidates:
                             id_map[ref_name] = candidates[0]
         if id_map:
@@ -97,8 +96,7 @@ class StaticExecutor:
                 if task.args:
                     task.args = _rename_task_references(task.args, id_map)
 
-        tools_res = await self.session.list_tools()
-        tools_list = tools_res.tools if hasattr(tools_res, "tools") else tools_res
+        tools_list = await self.session.list_tools()
         tools_map = {t.name: t for t in tools_list}
 
         for task in plan.tasks:
@@ -141,9 +139,13 @@ class StaticExecutor:
                 raise ValueError(err_msg)
 
             # Auto-wrap in {"input": ...} if required
-            if target_tool_input_schema and "input" in target_tool_input_schema.get("properties", {}):
-                if isinstance(resolved_args, dict) and "input" not in resolved_args:
-                    resolved_args = {"input": resolved_args}
+            if (
+                target_tool_input_schema
+                and "input" in target_tool_input_schema.get("properties", {})
+                and isinstance(resolved_args, dict)
+                and "input" not in resolved_args
+            ):
+                resolved_args = {"input": resolved_args}
 
             logger.debug(f"Resolved call arguments for tool '{task.tool_name}': {resolved_args}")
 
@@ -200,7 +202,7 @@ class DynamicExecutor:
         model_name: str = "gemini-2.5-flash",
         prompt: PromptComposer | None = None,
         dynamic_binding_mode: DynamicBindingMode | None = DynamicBindingMode.JMESPATH_VALIDATE,
-    ):
+    ) -> None:
         self.session = session
         self.dynamic_binding_mode = dynamic_binding_mode or DynamicBindingMode.JMESPATH_VALIDATE
         self.binding_failed_token = DEFAULT_BINDING_FAILED_TOKEN
@@ -211,7 +213,7 @@ class DynamicExecutor:
 
         # Default LLM runner for binder using injected model/model_name
         from src.shared.llm_client import run_structured_llm
-        def default_llm_runner(variables: dict, schema: Any) -> Any:
+        def default_llm_runner(variables: dict[str, Any], schema: Any) -> Any:
             prompt_composer = prompt or PromptComposer.from_file("bind_prompt_dynamic.yaml", PROMPTS_DIR)
             prompt_composer.set_variables(variables)
             prompt_text = prompt_composer.render()
@@ -231,8 +233,7 @@ class DynamicExecutor:
         ctx = ExecutionContext()
         logger.info(f"Starting execution of dynamic plan containing {len(plan.tasks)} tasks.")
 
-        tools_res = await self.session.list_tools()
-        tools_list = tools_res.tools if hasattr(tools_res, "tools") else tools_res
+        tools_list = await self.session.list_tools()
         tools_map = {t.name: t for t in tools_list}
 
         for task in plan.tasks:
@@ -265,7 +266,7 @@ class DynamicExecutor:
                         if dep_id in self.task_schemas_store:
                             expected_schemas[dep_id] = self.task_schemas_store[dep_id]["output_schema"]
                     if len(expected_schemas) == 1:
-                        expected_source_schema = list(expected_schemas.values())[0]
+                        expected_source_schema = next(iter(expected_schemas.values()))
                     elif len(expected_schemas) > 1:
                         expected_source_schema = {
                             "type": "object",
@@ -286,9 +287,13 @@ class DynamicExecutor:
                 )
 
             # Auto-wrap in {"input": ...} if required
-            if target_tool_input_schema and "input" in target_tool_input_schema.get("properties", {}):
-                if isinstance(resolved_args, dict) and "input" not in resolved_args:
-                    resolved_args = {"input": resolved_args}
+            if (
+                target_tool_input_schema
+                and "input" in target_tool_input_schema.get("properties", {})
+                and isinstance(resolved_args, dict)
+                and "input" not in resolved_args
+            ):
+                resolved_args = {"input": resolved_args}
 
             logger.debug(f"Resolved call arguments for tool '{task.tool_name}': {resolved_args}")
 
@@ -318,13 +323,13 @@ class DynamicExecutor:
 
     def _llm_bind(
         self,
-        tool_name: str,
-        input_schema: dict,
+        tool_name: str,  # noqa: ARG002
+        input_schema: dict[str, Any],
         input_description: str,
-        dependency_context: dict,
+        dependency_context: dict[str, Any],
         planned_jmespath: str | None = None,
-        expected_source_schema: dict | None = None,
-    ) -> dict:
+        expected_source_schema: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Wrapper for LLM dynamic binding."""
         return self.binder.bind_with_validation(
             intent=input_description,
@@ -336,11 +341,11 @@ class DynamicExecutor:
 
     def _llm_direct_bind(
         self,
-        tool_name: str,
-        input_schema: dict,
+        tool_name: str,  # noqa: ARG002
+        input_schema: dict[str, Any],
         input_description: str,
-        dependency_context: dict,
-    ) -> dict:
+        dependency_context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Wrapper for direct LLM binding."""
         return self.binder.bind_directly(
             intent=input_description,

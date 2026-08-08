@@ -51,10 +51,7 @@ def generate_schema(val: Any) -> dict[str, Any]:
             schema["required"] = required
         return schema
     elif isinstance(val, list):
-        if len(val) > 0:
-            items_schema = generate_schema(val[0])
-        else:
-            items_schema = {}
+        items_schema = generate_schema(val[0]) if len(val) > 0 else {}
         return {"type": "array", "items": items_schema}
     elif isinstance(val, bool):
         return {"type": "boolean"}
@@ -89,11 +86,7 @@ def schemas_match(expected: Any, actual: Any) -> bool:
             return False
 
     # Compare 'items' recursively
-    if "items" in expected or "items" in actual:
-        if not schemas_match(expected.get("items"), actual.get("items")):
-            return False
-
-    return True
+    return not (("items" in expected or "items" in actual) and not schemas_match(expected.get("items"), actual.get("items")))
 
 
 class DynamicDataBinder:
@@ -105,7 +98,7 @@ class DynamicDataBinder:
         self,
         llm_runner: Callable[[dict[str, Any], Any], Any],
         binding_engine: BindingEngineProtocol | None = None,
-    ):
+    ) -> None:
         """
         Args:
             llm_runner: Callable that accepts a dict of prompt variables and response schema,
@@ -264,7 +257,7 @@ class DynamicDataBinder:
         from src.shared.llm_client import run_structured_llm
 
         prompt = PromptComposer(
-            template="""You are a Schema-Conforming Data Mapper.
+            preamble="""You are a Schema-Conforming Data Mapper.
 Your task is to map values from the Source Context Data to produce a target JSON object that strictly conforms to the Target Schema based on the User Intent.
 
 User Intent:

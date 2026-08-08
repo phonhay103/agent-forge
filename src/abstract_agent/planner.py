@@ -14,7 +14,7 @@ class AbstractPlanner:
     Does NOT select specific tools — runtime handles that.
     """
 
-    def __init__(self, model: Any | None = None, model_name: str = "gemini-2.5-flash", prompt: PromptComposer | None = None):
+    def __init__(self, model: Any | None = None, model_name: str = "gemini-2.5-flash", prompt: PromptComposer | None = None) -> None:
         self.model = model
         self.model_name = model_name
         self.prompt = prompt

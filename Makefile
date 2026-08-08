@@ -29,12 +29,12 @@ agent-dynamic: ## Run Dynamic Binding Agent directly
 agent-abstract: ## Run Abstract Planning Agent directly
 	uv run python -m src.abstract_agent
 
-lint: ## Run lint checks with Ruff (with auto-fix) and MyPy on the rendering engine
-	uv run ruff check --fix packages/prompt_composer/src/prompt_composer/renderers/
-	uv run mypy packages/prompt_composer/src/prompt_composer/renderers/
+lint: ## Run lint checks with Ruff (with auto-fix) and ty on the repository
+	uv run ruff check --fix .
+	uv run ty check
 
-format: ## Format code using Ruff formatter on the rendering engine
-	uv run ruff format packages/prompt_composer/src/prompt_composer/renderers/
+format: ## Format code using Ruff formatter on the repository
+	uv run ruff format .
 
 test: ## Run all unit tests with pytest
 	PYTHONPATH=. uv run pytest tests/
