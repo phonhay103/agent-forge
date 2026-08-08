@@ -1,8 +1,8 @@
-# JSON Schema Transformer & MCP Headless Core
+# 🛠️ AgentForge — Multi-step AI Agent Framework
 
-A modular, provider-agnostic **MCP (Model Context Protocol) Headless Execution Engine & Schema Transformer**.
+A modular, provider-agnostic **Multi-step AI Agent Orchestration & Execution Framework**.
 
-It enables multi-step tool-calling pipelines by automatically generating execution plans, resolving step-to-step variable dependencies using pluggable expression engines (JMESPath, JSONPath, Dot Notation), and repairing payloads at runtime using LLM Fallback Mappers when deterministic binding falls short.
+It enables complex multi-step agent pipelines by automatically generating execution plans, resolving step-to-step variable dependencies using pluggable expression engines (JMESPath, JSONPath, Dot Notation), and repairing payloads at runtime using LLM Fallback Mappers when deterministic binding falls short.
 
 ---
 

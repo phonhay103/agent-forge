@@ -1,7 +1,7 @@
 [project]
-name = "json-schema-transformer"
+name = "agent-forge"
 version = "0.1.0"
-description = "MCP Headless Execution Engine & Schema Transformer"
+description = "AgentForge — Multi-step AI Agent Orchestration & Execution Framework"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
