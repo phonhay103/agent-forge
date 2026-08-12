@@ -1262,6 +1262,7 @@ version = "0.1.0"
 source = { editable = "packages/prompt_composer" }
 dependencies = [
     { name = "jinja2" },
+    { name = "magic-detector" },
     { name = "pydantic" },
     { name = "pyyaml" },
 ]
@@ -1269,6 +1270,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "jinja2", specifier = ">=3.1.2" },
+    { name = "magic-detector", editable = "packages/magic_detector" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pyyaml", specifier = ">=6.0" },
 ]

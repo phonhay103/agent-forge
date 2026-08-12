@@ -19,7 +19,6 @@ from magic_detector.magika_wrapper import MagikaWrapper
 from magic_detector.models import DetectionResult, InputTarget, NormalizedResult
 from magic_detector.normalizer import OutputNormalizer
 from magic_detector.parallel import (
-    AdaptiveHybridEnsembleStrategy,
     CompositeEnsembleStrategy,
     ConsensusEnsembleStrategy,
     ConsensusMode,
@@ -32,11 +31,11 @@ from magic_detector.pipeline import (
     PipelineRunner,
     SequentialAccumulatorStrategy,
 )
+from magic_detector.enums import FileType
 
 __version__ = "0.1.0"
 
 __all__ = [
-    "AdaptiveHybridEnsembleStrategy",
     "BaseChecker",
     "BaseEnsembleStrategy",
     "BasePipelineStrategy",
@@ -48,6 +47,7 @@ __all__ = [
     "DetectionResult",
     "DetectorContainer",
     "FallbackChainStrategy",
+    "FileType",
     "UNINFORMATIVE_EXTENSIONS",
     "UNINFORMATIVE_MIMES",
     "InputTarget",

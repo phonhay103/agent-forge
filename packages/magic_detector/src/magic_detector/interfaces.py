@@ -21,6 +21,15 @@ class BaseChecker(Protocol):
         """Perform file/buffer check asynchronously."""
         ...
 
+    def check_batch(self, targets: list[InputTarget]) -> list[DetectionResult]:
+        """Perform check for multiple targets (default: sequential processing)."""
+        return [self.check(t) for t in targets]
+
+    async def check_batch_async(self, targets: list[InputTarget]) -> list[DetectionResult]:
+        """Perform check for multiple targets asynchronously (default: sequential processing)."""
+        return [await self.check_async(t) for t in targets]
+
+
 
 @runtime_checkable
 class BasePipelineStrategy(Protocol):

@@ -13,6 +13,7 @@ from magic_detector import (
     ConsensusMode,
     ParallelRunner,
     FirstMatchEnsembleStrategy,
+    MagicDetectorSuite,
 )
 
 
@@ -86,3 +87,14 @@ async def test_parallel_runner_async():
 
     assert res.checker_name == "ensemble_composite"
     assert res.execution_time_ms > 0
+
+import pytest
+@pytest.mark.anyio
+async def test_detect_normalized_async_batch():
+    suite = MagicDetectorSuite()
+    batch_res = await suite.detect_normalized_async(
+        [b"import os\n", "script.py"],
+        use_parallel=True
+    )
+    assert len(batch_res) == 2
+    assert batch_res[0].mime_type is not None

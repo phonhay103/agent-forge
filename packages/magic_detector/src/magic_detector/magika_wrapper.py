@@ -60,3 +60,11 @@ class MagikaWrapper:
         if self._magika_instance is not None:
             return self._magika_instance.identify_path(file_path)
         raise RuntimeError("google/magika library is not available.")
+
+    def identify_paths(self, file_paths: list[str]) -> Any:
+        """Identify multiple file paths using Magika batch processing."""
+        if self._magika_instance is not None:
+            from pathlib import Path
+            paths = [Path(p) for p in file_paths]
+            return self._magika_instance.identify_paths(paths)
+        raise RuntimeError("google/magika library is not available.")

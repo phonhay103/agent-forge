@@ -49,12 +49,12 @@ class DetectorContainer:
         max_workers: int = 4,
     ) -> ParallelRunner:
         """Create a ParallelRunner using registered checkers."""
-        from magic_detector.parallel.strategies import AdaptiveHybridEnsembleStrategy
+        from magic_detector.parallel.strategies import CompositeEnsembleStrategy
 
         selected = [self.get(name) for name in checker_names] if checker_names else list(self._checkers.values())
         return ParallelRunner(
             checkers=selected,
-            ensemble_strategy=ensemble_strategy or AdaptiveHybridEnsembleStrategy(),
+            ensemble_strategy=ensemble_strategy or CompositeEnsembleStrategy(),
             max_workers=max_workers,
         )
 

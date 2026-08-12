@@ -39,9 +39,8 @@ class SequentialAccumulatorStrategy(BasePipelineStrategy):
                 is_comp_ext_generic = composite.extension in UNINFORMATIVE_EXTENSIONS or composite.extension is None
 
                 # Check if res.extension matches composite mime_type
-                matched_mime_ext = (
-                    mimetypes.guess_extension(composite.mime_type).lstrip(".") if composite.mime_type else None
-                )
+                guess = mimetypes.guess_extension(composite.mime_type) if composite.mime_type else None
+                matched_mime_ext = guess.lstrip(".") if guess else None
 
                 if (
                     res.extension == matched_mime_ext

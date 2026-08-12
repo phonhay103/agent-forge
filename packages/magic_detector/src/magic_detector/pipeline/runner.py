@@ -26,6 +26,13 @@ class PipelineRunner:
         """Run all checkers sequentially through the configured strategy."""
         return self.strategy.execute(self.checkers, target)
 
+    async def run_async(self, target: InputTarget) -> DetectionResult:
+        """Run all checkers sequentially through the configured strategy asynchronously."""
+        # For simplicity in pipelines, if strategy doesn't support async, we wrap the sync execute
+        # Real async strategies could be added later.
+        import asyncio
+        return await asyncio.to_thread(self.strategy.execute, self.checkers, target)
+
     def run_bytes(self, buffer: bytes, file_name: str | None = None) -> DetectionResult:
         """Convenience method to run pipeline on bytes buffer."""
         return self.run(InputTarget(buffer=buffer, file_name=file_name))

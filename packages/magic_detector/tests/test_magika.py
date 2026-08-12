@@ -39,6 +39,20 @@ def test_hybrid_parallel_ensemble_with_magika():
     python_code = b"import sys\nimport os\n"
     res = suite.detect_parallel(python_code, file_name="script.py")
 
-    assert res.checker_name == "ensemble_adaptive_hybrid"
-    assert res.mime_type is not None
+    assert res.checker_name == "ensemble_composite"
+    assert res.mime_type == "text/x-python"
     assert len(res.details["all_results"]) >= 5
+
+def test_magika_batch_paths(tmp_path):
+    p1 = tmp_path / "script1.py"
+    p2 = tmp_path / "script2.py"
+    p1.write_text("import os\n")
+    p2.write_text("import sys\n")
+
+    suite = MagicDetectorSuite()
+    results = suite.detect_magika_paths([str(p1), str(p2)])
+
+    assert len(results) == 2
+    assert results[0].checker_name == "magika"
+    assert results[0].details["label"] in ("python", "txt")
+    assert results[1].details["label"] in ("python", "txt")
