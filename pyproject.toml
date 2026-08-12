@@ -7,6 +7,7 @@ requires-python = ">=3.14"
 dependencies = [
     "json-schema-binder",
     "prompt-composer",
+    "magic-detector",
     "fastmcp>=3.4.5",
     "mcp>=1.29.0",
     "pydantic>=2.13.4",
@@ -31,6 +32,7 @@ members = ["packages/*"]
 [tool.uv.sources]
 json-schema-binder = { workspace = true }
 prompt-composer = { workspace = true }
+magic-detector = { workspace = true }
 
 
 [tool.ruff]
@@ -56,7 +58,7 @@ ignore = [
     "ANN002", # Do not require type annotation for *args
     "ANN003", # Do not require type annotation for **kwargs
     "ANN401", # Dynamically typed expressions (typing.Any) are allowed
-    
+
     # --- Resolve conflicts with Formatter ---
     "COM812", # Ignore missing trailing comma warnings (handled by formatter)
     "ISC002", # Ignore implicit string concatenation warnings
@@ -71,7 +73,7 @@ ignore-fully-untyped = false
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-known-first-party = ["prompt_composer", "json_schema_binder"]
+known-first-party = ["prompt_composer", "json_schema_binder", "magic_detector"]
 
 [tool.ruff.lint.per-file-ignores]
 # Allow assert in testing, relax type annotation requirements
@@ -88,7 +90,7 @@ known-first-party = ["prompt_composer", "json_schema_binder"]
 [tool.ty]
 
 [tool.ty.src]
-include = ["src", "packages/prompt_composer/src", "packages/json_schema_binder/src"]
+include = ["src", "packages/prompt_composer/src", "packages/json_schema_binder/src", "packages/magic_detector/src"]
 exclude = ["packages/prompt_composer/src/prompt_composer/formats/**"]
 
 [tool.ty.rules]

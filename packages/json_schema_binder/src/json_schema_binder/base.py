@@ -1,7 +1,6 @@
-from abc import ABC, abstractmethod
 from collections.abc import Callable
 from enum import StrEnum
-from typing import Any, TypeVar
+from typing import Any, Protocol, TypeVar, runtime_checkable
 
 from pydantic import BaseModel
 
@@ -33,21 +32,19 @@ def register_binding_engine(name: str) -> Callable[[Any], Any]:
     return decorator
 
 
-class BaseBindingEngine(ABC):
+@runtime_checkable
+class BaseBindingEngine(Protocol):
     @property
-    @abstractmethod
     def binding_type(self) -> BindingType:
         """Returns the binding engine type identifier."""
-        pass
+        ...
 
-    @abstractmethod
     def evaluate(self, expression: str, source_data: Any) -> EvaluationResult[Any]:
         """
         Evaluates a single expression string directly against source_data.
         """
-        pass
+        ...
 
-    @abstractmethod
     def transform(
         self,
         source_data: Any,
@@ -57,12 +54,11 @@ class BaseBindingEngine(ABC):
         """
         Transforms source_data into a target dictionary or BaseModel using a direct mapping specification.
         """
-        pass
+        ...
 
-    @abstractmethod
     def get_system_prompt_instruction(self) -> str:
         """Returns dynamic instructions for LLM System Prompt explaining how to format variable references."""
-        pass
+        ...
 
     def get_regex_pattern(self) -> str | None:
         """Returns the official representative regex pattern for this binding engine, or None if not defined."""
