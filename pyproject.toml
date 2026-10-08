@@ -31,7 +31,7 @@ members = ["packages/*"]
 
 [tool.uv.sources]
 json-schema-binder = { workspace = true }
-prompt-composer = { workspace = true }
+prompt-composer = { git = "https://github.com/phonhay103/prompt-composer.git", branch = "main" }
 magic-detector = { workspace = true }
 
 
@@ -90,8 +90,7 @@ known-first-party = ["prompt_composer", "json_schema_binder", "magic_detector"]
 [tool.ty]
 
 [tool.ty.src]
-include = ["src", "packages/prompt_composer/src", "packages/json_schema_binder/src", "packages/magic_detector/src"]
-exclude = ["packages/prompt_composer/src/prompt_composer/formats/**"]
+include = ["src", "packages/json_schema_binder/src", "packages/magic_detector/src"]
 
 [tool.ty.rules]
 all = "error"

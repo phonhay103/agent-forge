@@ -38,7 +38,6 @@ format: ## Format code using Ruff formatter on the repository
 
 test: ## Run all unit tests with pytest
 	PYTHONPATH=. uv run pytest tests/
-	cd packages/prompt_composer && uv run pytest tests/
 
 eval: ## Run evaluation suite with default engine (jmespath)
 	uv run python scripts/evaluate_all.py

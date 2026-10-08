@@ -11,7 +11,6 @@ members = [
     "agent-forge",
     "json-schema-binder",
     "magic-detector",
-    "prompt-composer",
 ]
 
 [[package]]
@@ -51,7 +50,7 @@ requires-dist = [
     { name = "langchain-openrouter", specifier = ">=0.2.7" },
     { name = "magic-detector", editable = "packages/magic_detector" },
     { name = "mcp", specifier = ">=1.29.0" },
-    { name = "prompt-composer", editable = "packages/prompt_composer" },
+    { name = "prompt-composer", git = "https://github.com/phonhay103/prompt-composer.git?branch=main" },
     { name = "pydantic", specifier = ">=2.13.4" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
 ]
@@ -1259,20 +1258,11 @@ wheels = [
 [[package]]
 name = "prompt-composer"
 version = "0.1.0"
-source = { editable = "packages/prompt_composer" }
+source = { git = "https://github.com/phonhay103/prompt-composer.git?branch=main#1c9327b62732839d40153e12edfa5286ce8319f1" }
 dependencies = [
     { name = "jinja2" },
-    { name = "magic-detector" },
     { name = "pydantic" },
     { name = "pyyaml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "jinja2", specifier = ">=3.1.2" },
-    { name = "magic-detector", editable = "packages/magic_detector" },
-    { name = "pydantic", specifier = ">=2.0.0" },
-    { name = "pyyaml", specifier = ">=6.0" },
 ]
 
 [[package]]

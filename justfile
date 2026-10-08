@@ -37,7 +37,6 @@ format:
 # Run all unit tests with pytest
 test:
     PYTHONPATH=. uv run pytest tests/
-    cd packages/prompt_composer && uv run pytest tests/
 
 # Run evaluation suite with default engine (jmespath)
 eval:
