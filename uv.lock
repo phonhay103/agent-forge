@@ -1257,8 +1257,8 @@ wheels = [
 
 [[package]]
 name = "prompt-composer"
-version = "0.1.0"
-source = { git = "https://github.com/phonhay103/prompt-composer.git?branch=main#1c9327b62732839d40153e12edfa5286ce8319f1" }
+version = "0.2.0"
+source = { git = "https://github.com/phonhay103/prompt-composer.git?branch=main#cf44dca9a70e029a7a43278ae039320f43642e87" }
 dependencies = [
     { name = "jinja2" },
     { name = "pydantic" },

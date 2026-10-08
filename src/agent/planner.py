@@ -35,7 +35,7 @@ class StaticPlanner:
         binding_instruction = engine.get_system_prompt_instruction()
         regex_pattern = engine.get_regex_pattern() if hasattr(engine, "get_regex_pattern") else None
 
-        prompt = self.prompt or PromptComposer.from_file("planner_prompt.yaml", PROMPTS_DIR)
+        prompt = self.prompt or PromptComposer.from_file("planner_prompt.yaml", PROMPTS_DIR, template_format="yaml")
         if "dynamic_planning_rules" in prompt._sections:
             prompt.remove_section("dynamic_planning_rules")
         prompt.set_variable("available_tools", json.dumps(available_tools_metadata, indent=2))
@@ -75,7 +75,7 @@ class DynamicPlanner:
         user_query: str,
         available_tools_metadata: list[Any],
     ) -> UnifiedPlan:
-        prompt = self.prompt or PromptComposer.from_file("planner_prompt.yaml", PROMPTS_DIR)
+        prompt = self.prompt or PromptComposer.from_file("planner_prompt.yaml", PROMPTS_DIR, template_format="yaml")
         if "static_binding_rules" in prompt._sections:
             prompt.remove_section("static_binding_rules")
         prompt.set_variable("available_tools", json.dumps(available_tools_metadata, indent=2))

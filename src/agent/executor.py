@@ -214,7 +214,9 @@ class DynamicExecutor:
         from src.shared.llm_client import run_structured_llm
 
         def default_llm_runner(variables: dict[str, Any], schema: Any) -> Any:
-            prompt_composer = prompt or PromptComposer.from_file("bind_prompt_dynamic.yaml", PROMPTS_DIR)
+            prompt_composer = prompt or PromptComposer.from_file(
+                "bind_prompt_dynamic.yaml", PROMPTS_DIR, template_format="yaml"
+            )
             prompt_composer.set_variables(variables)
             prompt_text = prompt_composer.render()
             return run_structured_llm(
