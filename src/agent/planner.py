@@ -3,8 +3,9 @@ import os
 import pathlib
 from typing import Any
 
-from json_schema_binder import BaseBindingEngine, get_binding_engine
 from prompt_composer import PromptComposer
+
+from json_schema_binder import BaseBindingEngine, get_binding_engine
 from src.agent.models import DynamicPlan, StaticPlan, UnifiedPlan
 from src.shared.llm_client import run_structured_llm
 

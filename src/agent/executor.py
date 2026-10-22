@@ -5,6 +5,8 @@ import pathlib
 import re
 from typing import Any
 
+from prompt_composer import PromptComposer
+
 from json_schema_binder import (
     BaseBindingEngine,
     BindingContext,
@@ -12,7 +14,6 @@ from json_schema_binder import (
     get_binding_engine,
     resolve_variables,
 )
-from prompt_composer import PromptComposer
 from src.agent.binder import DynamicDataBinder
 from src.agent.models import DynamicBindingMode, DynamicPlan, StaticPlan, UnifiedPlan
 from src.shared.executor_models import ExecutionContext

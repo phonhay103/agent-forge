@@ -6,7 +6,9 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "json-schema-binder",
-    "prompt-composer",
+    # Pinned so 0.3 (a breaking release) cannot slip in. Bump deliberately when a
+    # newer prompt-composer release is needed.
+    "prompt-composer==0.2.0",
     "magic-detector",
     "fastmcp>=3.4.5",
     "mcp>=1.29.0",
@@ -38,7 +40,6 @@ members = ["packages/*"]
 
 [tool.uv.sources]
 json-schema-binder = { workspace = true }
-prompt-composer = { git = "https://github.com/phonhay103/prompt-composer.git", branch = "main" }
 magic-detector = { workspace = true }
 
 
@@ -80,7 +81,7 @@ ignore-fully-untyped = false
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-known-first-party = ["prompt_composer", "json_schema_binder", "magic_detector"]
+known-first-party = ["json_schema_binder", "magic_detector"]
 
 [tool.ruff.lint.per-file-ignores]
 # Allow assert in testing, relax type annotation requirements

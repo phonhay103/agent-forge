@@ -257,6 +257,7 @@ class DynamicDataBinder:
     ) -> dict[str, Any]:
         """Use LLM directly to resolve tool arguments fitting the target schema without JMESPath."""
         from prompt_composer import PromptComposer
+
         from src.shared.llm_client import run_structured_llm
 
         prompt = PromptComposer(

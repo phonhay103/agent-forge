@@ -54,7 +54,7 @@ requires-dist = [
     { name = "langchain-openrouter", specifier = ">=0.2.7" },
     { name = "magic-detector", editable = "packages/magic_detector" },
     { name = "mcp", specifier = ">=1.29.0" },
-    { name = "prompt-composer", git = "https://github.com/phonhay103/prompt-composer.git?branch=main" },
+    { name = "prompt-composer", specifier = "==0.2.0" },
     { name = "pydantic", specifier = ">=2.13.4" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
 ]
@@ -1262,11 +1262,15 @@ wheels = [
 [[package]]
 name = "prompt-composer"
 version = "0.2.0"
-source = { git = "https://github.com/phonhay103/prompt-composer.git?branch=main#cf44dca9a70e029a7a43278ae039320f43642e87" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jinja2" },
     { name = "pydantic" },
     { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d1/9d/fa42c3f5e6e320387fbd25406d4eec892eb7f63fa6403a19abc368f96401/prompt_composer-0.2.0.tar.gz", hash = "sha256:d806699cfd482c2a4f1ab8a3ce1da20a38b77b3f1b4f203cee7fabef2bc57d0b", size = 65498, upload-time = "2026-10-08T09:48:40.731Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/98/b4/18a2db884744687379472e22a75d8d60c10ddd45857f600df49b1dcbf5f5/prompt_composer-0.2.0-py3-none-any.whl", hash = "sha256:d17c2f6cacb7cecded9dc91dd09fdb83c4ae58f718c82bf32bc3ea1a11207095", size = 40163, upload-time = "2026-10-08T09:48:39.57Z" },
 ]
 
 [[package]]
