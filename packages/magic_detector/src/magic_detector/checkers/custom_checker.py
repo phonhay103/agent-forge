@@ -1,6 +1,7 @@
 """Custom Parameter Checker using python-magic with advanced flags."""
 
 import time
+from typing import override
 
 from magic_detector.interfaces import BaseChecker
 from magic_detector.magic_wrapper import MagicWrapper
@@ -38,6 +39,7 @@ class CustomMagicChecker(BaseChecker):
         self.mime = mime
         self.mime_encoding = mime_encoding
 
+    @override
     def check(self, target: InputTarget) -> DetectionResult:
         start_time = time.perf_counter()
         try:
@@ -80,5 +82,6 @@ class CustomMagicChecker(BaseChecker):
                 execution_time_ms=elapsed_ms,
             )
 
+    @override
     async def check_async(self, target: InputTarget) -> DetectionResult:
         return self.check(target)

@@ -1,6 +1,7 @@
 """Wrapper for google/magika library with Dependency Injection."""
 
 import logging
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -20,8 +21,8 @@ class MagikaWrapper:
     """Dependency Injection wrapper around google/magika."""
 
     def __init__(
-        self, 
-        magika_instance: Any | None = None, 
+        self,
+        magika_instance: Any | None = None,
         model_dir: str | None = None,
         prediction_mode: str = "high_confidence",
     ) -> None:
@@ -35,9 +36,9 @@ class MagikaWrapper:
                     mode_enum = PredictionMode.MEDIUM_CONFIDENCE
                 elif prediction_mode == "best_guess":
                     mode_enum = PredictionMode.BEST_GUESS
-                    
+
                 if model_dir:
-                    self._magika_instance = Magika(model_dir=model_dir, prediction_mode=mode_enum)
+                    self._magika_instance = Magika(model_dir=Path(model_dir), prediction_mode=mode_enum)
                 else:
                     self._magika_instance = Magika(prediction_mode=mode_enum)
             except Exception as e:
@@ -64,7 +65,6 @@ class MagikaWrapper:
     def identify_paths(self, file_paths: list[str]) -> Any:
         """Identify multiple file paths using Magika batch processing."""
         if self._magika_instance is not None:
-            from pathlib import Path
             paths = [Path(p) for p in file_paths]
             return self._magika_instance.identify_paths(paths)
         raise RuntimeError("google/magika library is not available.")

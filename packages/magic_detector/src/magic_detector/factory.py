@@ -58,6 +58,7 @@ class DetectorContainer:
             max_workers=max_workers,
         )
 
+
 def create_default_container() -> DetectorContainer:
     """Factory helper to build a pre-configured container with standard python-magic and magika checkers."""
     container = DetectorContainer()

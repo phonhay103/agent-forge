@@ -1,8 +1,9 @@
 """MIME Type Checker using python-magic."""
 
 import time
+from typing import override
 
-from magic_detector._constants import UNINFORMATIVE_MIMES, DEFAULT_BINARY_MIME
+from magic_detector._constants import DEFAULT_BINARY_MIME
 from magic_detector.interfaces import BaseChecker
 from magic_detector.magic_wrapper import MagicWrapper
 from magic_detector.models import CheckerCategory, DetectionResult, InputTarget
@@ -24,6 +25,7 @@ class MagicMimeChecker(BaseChecker):
         self.wrapper = wrapper or MagicWrapper(mime=True)
         self.max_bytes = max_bytes
 
+    @override
     def check(self, target: InputTarget) -> DetectionResult:
         start_time = time.perf_counter()
         try:
@@ -35,7 +37,6 @@ class MagicMimeChecker(BaseChecker):
                 mime_type = DEFAULT_BINARY_MIME
 
             elapsed_ms = (time.perf_counter() - start_time) * 1000.0
-            is_generic = mime_type in UNINFORMATIVE_MIMES
 
             return DetectionResult(
                 mime_type=mime_type,
@@ -53,5 +54,6 @@ class MagicMimeChecker(BaseChecker):
                 execution_time_ms=elapsed_ms,
             )
 
+    @override
     async def check_async(self, target: InputTarget) -> DetectionResult:
         return self.check(target)

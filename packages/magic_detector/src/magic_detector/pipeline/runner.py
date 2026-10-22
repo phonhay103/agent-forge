@@ -31,6 +31,7 @@ class PipelineRunner:
         # For simplicity in pipelines, if strategy doesn't support async, we wrap the sync execute
         # Real async strategies could be added later.
         import asyncio
+
         return await asyncio.to_thread(self.strategy.execute, self.checkers, target)
 
     def run_bytes(self, buffer: bytes, file_name: str | None = None) -> DetectionResult:

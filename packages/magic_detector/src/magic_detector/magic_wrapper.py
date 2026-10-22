@@ -8,7 +8,9 @@ logger = logging.getLogger(__name__)
 # Try to import official python-magic
 _MAGIC_AVAILABLE = False
 try:
-    import magic
+    # Optional dependency: python-magic ships only via the `magic` extra, so the
+    # module is unresolvable in a default environment.
+    import magic  # ty: ignore[unresolved-import]
 
     # Check if libmagic underlying shared library is actually loaded
     try:
@@ -17,7 +19,7 @@ try:
     except Exception as e:
         logger.warning(f"python-magic imported but libmagic library failed to load: {e}.")
 except ImportError:
-    magic = None  # type: ignore
+    magic = None
     logger.warning("python-magic module not installed.")
 
 

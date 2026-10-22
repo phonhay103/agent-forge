@@ -19,7 +19,7 @@ def test_mime_checker_bytes():
     res = checker.check(target)
     assert res.mime_type == "image/png"
     assert res.checker_name == "magic_mime"
-    
+
 
 def test_bytes_checker():
     checker = MagicBytesChecker()
@@ -58,4 +58,3 @@ def test_content_type_label_reexport():
     assert ContentTypeLabel is MagikaContentTypeLabel
     assert ContentTypeLabel.PYTHON == "python"
     assert ContentTypeLabel.PNG == "png"
-

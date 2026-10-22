@@ -1,6 +1,7 @@
 """Google Magika AI File Type Detector Checker."""
 
 import time
+from typing import Any, override
 
 from magika import ContentTypeLabel
 
@@ -27,7 +28,7 @@ class MagikaChecker(BaseChecker):
         self.max_bytes = max_bytes
         self.wrapper = wrapper or MagikaWrapper(prediction_mode=prediction_mode)
 
-    def _build_result(self, res: any, elapsed_ms: float) -> DetectionResult:
+    def _build_result(self, res: Any, elapsed_ms: float) -> DetectionResult:
         # Extract fields safely across Magika versions
         if hasattr(res, "prediction"):
             score = getattr(res.prediction, "score", 0.0)
@@ -37,11 +38,7 @@ class MagikaChecker(BaseChecker):
             output = getattr(res, "output", None)
 
         label = getattr(output, "label", ContentTypeLabel.UNKNOWN) if output else ContentTypeLabel.UNKNOWN
-        mime_type = (
-            getattr(output, "mime_type", DEFAULT_BINARY_MIME)
-            if output
-            else DEFAULT_BINARY_MIME
-        )
+        mime_type = getattr(output, "mime_type", DEFAULT_BINARY_MIME) if output else DEFAULT_BINARY_MIME
         group = getattr(output, "group", "unknown") if output else "unknown"
         description = getattr(output, "description", None) if output else None
         extensions = getattr(output, "extensions", []) if output else []
@@ -64,6 +61,7 @@ class MagikaChecker(BaseChecker):
             execution_time_ms=elapsed_ms,
         )
 
+    @override
     def check(self, target: InputTarget) -> DetectionResult:
         start_time = time.perf_counter()
         try:
@@ -85,49 +83,48 @@ class MagikaChecker(BaseChecker):
                 execution_time_ms=elapsed_ms,
             )
 
+    @override
     def check_batch(self, targets: list[InputTarget]) -> list[DetectionResult]:
         """Perform batch check for file paths using Magika's batch capability."""
         start_time = time.perf_counter()
-        
-        file_paths = []
-        target_indices = []
-        results = []
-        
+
+        file_paths: list[str] = []
+        target_indices: list[int] = []
+        # Placeholders for path targets; buffer targets are checked individually below.
+        results: list[DetectionResult | None] = [None] * len(targets)
+
         for i, target in enumerate(targets):
             if target.file_path and target.buffer is None:
                 file_paths.append(target.file_path)
                 target_indices.append(i)
-                # Placeholder
-                results.append(None)
             else:
                 # If it's a buffer, fall back to individual check
-                results.append(self.check(target))
-                
-        if not file_paths:
-            return results
-            
-        try:
-            magika_results = self.wrapper.identify_paths(file_paths)
-            elapsed_ms = (time.perf_counter() - start_time) * 1000.0
-            # distribute elapsed time across all items to keep it consistent
-            elapsed_ms_per_item = elapsed_ms / len(file_paths)
-            
-            for j, res in enumerate(magika_results):
-                idx = target_indices[j]
-                results[idx] = self._build_result(res, elapsed_ms_per_item)
-                
-        except Exception as e:
-            elapsed_ms = (time.perf_counter() - start_time) * 1000.0
-            for idx in target_indices:
-                results[idx] = DetectionResult(
-                    checker_name=self.name,
-                    checker_category=self.category,
-                    details={"error": str(e)},
-                    execution_time_ms=elapsed_ms / len(file_paths),
-                )
-                
-        return results
+                results[i] = self.check(target)
 
+        if file_paths:
+            try:
+                magika_results = self.wrapper.identify_paths(file_paths)
+                elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+                # distribute elapsed time across all items to keep it consistent
+                elapsed_ms_per_item = elapsed_ms / len(file_paths)
 
+                for j, res in enumerate(magika_results):
+                    idx = target_indices[j]
+                    results[idx] = self._build_result(res, elapsed_ms_per_item)
+
+            except Exception as e:
+                elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+                for idx in target_indices:
+                    results[idx] = DetectionResult(
+                        checker_name=self.name,
+                        checker_category=self.category,
+                        details={"error": str(e)},
+                        execution_time_ms=elapsed_ms / len(file_paths),
+                    )
+
+        # Slots only stay empty if Magika returned fewer results than the paths it was given.
+        return [res if res is not None else self.check(target) for res, target in zip(results, targets, strict=True)]
+
+    @override
     async def check_async(self, target: InputTarget) -> DetectionResult:
         return self.check(target)

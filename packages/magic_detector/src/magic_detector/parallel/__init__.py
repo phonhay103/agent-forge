@@ -5,15 +5,15 @@ from magic_detector.parallel.strategies import (
     CompositeEnsembleStrategy,
     ConsensusEnsembleStrategy,
     ConsensusMode,
-    PrimaryCategoryEnsembleStrategy,
     FirstMatchEnsembleStrategy,
+    PrimaryCategoryEnsembleStrategy,
 )
 
 __all__ = [
     "CompositeEnsembleStrategy",
     "ConsensusEnsembleStrategy",
     "ConsensusMode",
+    "FirstMatchEnsembleStrategy",
     "ParallelRunner",
     "PrimaryCategoryEnsembleStrategy",
-    "FirstMatchEnsembleStrategy",
 ]

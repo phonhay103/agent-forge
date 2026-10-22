@@ -1,6 +1,7 @@
 """Bytes/Description Checker using python-magic."""
 
 import time
+from typing import override
 
 from magic_detector.interfaces import BaseChecker
 from magic_detector.magic_wrapper import MagicWrapper
@@ -23,6 +24,7 @@ class MagicBytesChecker(BaseChecker):
         self.wrapper = wrapper or MagicWrapper(mime=False)
         self.max_bytes = max_bytes
 
+    @override
     def check(self, target: InputTarget) -> DetectionResult:
         start_time = time.perf_counter()
         try:
@@ -34,7 +36,6 @@ class MagicBytesChecker(BaseChecker):
                 desc = "empty or unknown"
 
             elapsed_ms = (time.perf_counter() - start_time) * 1000.0
-            is_valid = desc != "data" and desc != "empty"
 
             return DetectionResult(
                 description=desc,
@@ -52,5 +53,6 @@ class MagicBytesChecker(BaseChecker):
                 execution_time_ms=elapsed_ms,
             )
 
+    @override
     async def check_async(self, target: InputTarget) -> DetectionResult:
         return self.check(target)

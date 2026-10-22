@@ -57,9 +57,7 @@ class OutputNormalizer:
             final_ext = extension or (info.extensions[0] if info.extensions else None)
             final_desc = description or info.description
             category = info.group
-            is_text = info.is_text or (
-                result.encoding is not None and result.encoding not in ("binary", "unknown")
-            )
+            is_text = info.is_text or (result.encoding is not None and result.encoding not in ("binary", "unknown"))
         else:
             # Fallback for types not in Magika KB
             final_label = label_str or (extension.lower() if extension else ContentTypeLabel.UNKNOWN.value)
@@ -83,7 +81,6 @@ class OutputNormalizer:
             description=final_desc,
             encoding=result.encoding,
             is_text=is_text,
-            
             checker_name=result.checker_name,
             raw_details=details,
         )

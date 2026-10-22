@@ -22,7 +22,7 @@ def test_magika_client_standalone():
     suite = MagicDetectorSuite()
     res = suite.detect_magika(b"import os\nimport sys\n")
     assert res.checker_name == "magika"
-    
+
 
 def test_hybrid_pipeline_with_magika():
     suite = MagicDetectorSuite()
@@ -42,6 +42,7 @@ def test_hybrid_parallel_ensemble_with_magika():
     assert res.checker_name == "ensemble_composite"
     assert res.mime_type == "text/x-python"
     assert len(res.details["all_results"]) >= 5
+
 
 def test_magika_batch_paths(tmp_path):
     p1 = tmp_path / "script1.py"

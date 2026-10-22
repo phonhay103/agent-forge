@@ -1,6 +1,7 @@
 """Enums for magic_detector, extending Magika's ContentTypeLabel."""
 
 from enum import StrEnum
+
 from magika import ContentTypeLabel
 
 _magika_members = [(member.name, member.value) for member in ContentTypeLabel]

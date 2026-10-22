@@ -1,6 +1,7 @@
 """Basic ensemble strategies."""
 
 import time
+from typing import override
 
 from magic_detector._constants import UNINFORMATIVE_MIMES, UNKNOWN
 from magic_detector.interfaces import BaseEnsembleStrategy
@@ -10,7 +11,8 @@ from magic_detector.models import DetectionResult, InputTarget
 class FirstMatchEnsembleStrategy(BaseEnsembleStrategy):
     """Ensemble strategy: Selects the first result with a non-generic outcome."""
 
-    def ensemble(self, results: list[DetectionResult], _target: InputTarget) -> DetectionResult:
+    @override
+    def ensemble(self, results: list[DetectionResult], target: InputTarget) -> DetectionResult:
         start_time = time.perf_counter()
         if not results:
             return DetectionResult(checker_name="ensemble_first_match", mime_type=UNKNOWN, description=UNKNOWN)
@@ -41,7 +43,8 @@ class FirstMatchEnsembleStrategy(BaseEnsembleStrategy):
 class CompositeEnsembleStrategy(BaseEnsembleStrategy):
     """Ensemble strategy: Combines mime, encoding, extension, and description into a comprehensive result."""
 
-    def ensemble(self, results: list[DetectionResult], _target: InputTarget) -> DetectionResult:
+    @override
+    def ensemble(self, results: list[DetectionResult], target: InputTarget) -> DetectionResult:
         start_time = time.perf_counter()
 
         mime_type = None

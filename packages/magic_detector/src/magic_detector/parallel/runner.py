@@ -33,7 +33,11 @@ class ParallelRunner:
         """Run checkers concurrently using ThreadPoolExecutor and combine via ensemble strategy."""
         active_checkers = [c for c in self.checkers if c.enabled]
         if not active_checkers:
-            return DetectionResult(checker_name="parallel_empty", mime_type=UNKNOWN, description=UNKNOWN, )
+            return DetectionResult(
+                checker_name="parallel_empty",
+                mime_type=UNKNOWN,
+                description=UNKNOWN,
+            )
 
         start_time = time.perf_counter()
 
@@ -49,7 +53,11 @@ class ParallelRunner:
         """Run checkers asynchronously and combine via ensemble strategy."""
         active_checkers = [c for c in self.checkers if c.enabled]
         if not active_checkers:
-            return DetectionResult(checker_name="parallel_empty", mime_type=UNKNOWN, description=UNKNOWN, )
+            return DetectionResult(
+                checker_name="parallel_empty",
+                mime_type=UNKNOWN,
+                description=UNKNOWN,
+            )
 
         start_time = time.perf_counter()
         tasks = [c.check_async(target) for c in active_checkers]
@@ -64,15 +72,20 @@ class ParallelRunner:
         active_checkers = [c for c in self.checkers if c.enabled]
         if not active_checkers:
             return [
-                DetectionResult(checker_name="parallel_empty", mime_type=UNKNOWN, description=UNKNOWN)
-                for _ in targets
+                DetectionResult(checker_name="parallel_empty", mime_type=UNKNOWN, description=UNKNOWN) for _ in targets
             ]
 
         start_time = time.perf_counter()
-        
+
+        def check_batch_for(checker: BaseChecker) -> list[DetectionResult]:
+            batch_check = getattr(checker, "check_batch", None)
+            if batch_check is not None:
+                return batch_check(targets)
+            return [checker.check(t) for t in targets]
+
         with ThreadPoolExecutor(max_workers=min(len(active_checkers), self.max_workers)) as executor:
             # We call the new check_batch method on each checker
-            futures = [executor.submit(getattr(c, "check_batch", lambda tgts: [c.check(t) for t in tgts]), targets) for c in active_checkers]
+            futures = [executor.submit(check_batch_for, c) for c in active_checkers]
             # results_by_checker is a list (checkers) of lists (results per target)
             results_by_checker = [f.result() for f in futures]
 
@@ -91,17 +104,17 @@ class ParallelRunner:
         active_checkers = [c for c in self.checkers if c.enabled]
         if not active_checkers:
             return [
-                DetectionResult(checker_name="parallel_empty", mime_type=UNKNOWN, description=UNKNOWN)
-                for _ in targets
+                DetectionResult(checker_name="parallel_empty", mime_type=UNKNOWN, description=UNKNOWN) for _ in targets
             ]
 
         start_time = time.perf_counter()
-        
+
         # We call the new check_batch_async method on each checker
-        async def call_checker_batch(c):
-            if hasattr(c, "check_batch_async"):
-                return await c.check_batch_async(targets)
-            return [await c.check_async(t) for t in targets]
+        async def call_checker_batch(checker: BaseChecker) -> list[DetectionResult]:
+            batch_check_async = getattr(checker, "check_batch_async", None)
+            if batch_check_async is not None:
+                return await batch_check_async(targets)
+            return [await checker.check_async(t) for t in targets]
 
         tasks = [call_checker_batch(c) for c in active_checkers]
         results_by_checker = await asyncio.gather(*tasks)

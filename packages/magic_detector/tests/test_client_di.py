@@ -40,8 +40,16 @@ def test_client_parallel_call():
 
 def test_custom_container_di():
     container = DetectorContainer()
-    container.register(MagicMimeChecker(name="custom_mime_1", ))
-    container.register(MagicBytesChecker(name="custom_bytes_1", ))
+    container.register(
+        MagicMimeChecker(
+            name="custom_mime_1",
+        )
+    )
+    container.register(
+        MagicBytesChecker(
+            name="custom_bytes_1",
+        )
+    )
 
     suite = MagicDetectorSuite(container=container)
     assert suite.container.list_checkers() == ["custom_mime_1", "custom_bytes_1"]

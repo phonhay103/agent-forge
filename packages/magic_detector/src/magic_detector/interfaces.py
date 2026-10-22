@@ -30,7 +30,6 @@ class BaseChecker(Protocol):
         return [await self.check_async(t) for t in targets]
 
 
-
 @runtime_checkable
 class BasePipelineStrategy(Protocol):
     """Protocol for executing pipeline steps."""

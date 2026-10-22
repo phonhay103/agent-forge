@@ -47,4 +47,3 @@ def test_pipeline_fallback_chain():
     res = runner.run(target)
 
     assert res.is_success
-    

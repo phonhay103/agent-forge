@@ -2,7 +2,7 @@
 
 from magika import ContentTypeLabel
 
-from magic_detector._constants import UNINFORMATIVE_EXTENSIONS, UNINFORMATIVE_MIMES, DEFAULT_BINARY_MIME, UNKNOWN
+from magic_detector._constants import DEFAULT_BINARY_MIME, UNINFORMATIVE_EXTENSIONS, UNINFORMATIVE_MIMES, UNKNOWN
 from magic_detector.checkers import (
     CustomMagicChecker,
     MagicBytesChecker,
@@ -12,6 +12,7 @@ from magic_detector.checkers import (
     MagikaChecker,
 )
 from magic_detector.client import MagicDetectorSuite
+from magic_detector.enums import FileType
 from magic_detector.factory import DetectorContainer, create_default_container
 from magic_detector.interfaces import BaseChecker, BaseEnsembleStrategy, BasePipelineStrategy
 from magic_detector.magic_wrapper import MagicWrapper
@@ -22,20 +23,23 @@ from magic_detector.parallel import (
     CompositeEnsembleStrategy,
     ConsensusEnsembleStrategy,
     ConsensusMode,
+    FirstMatchEnsembleStrategy,
     ParallelRunner,
     PrimaryCategoryEnsembleStrategy,
-    FirstMatchEnsembleStrategy,
 )
 from magic_detector.pipeline import (
     FallbackChainStrategy,
     PipelineRunner,
     SequentialAccumulatorStrategy,
 )
-from magic_detector.enums import FileType
 
 __version__ = "0.1.0"
 
 __all__ = [
+    "DEFAULT_BINARY_MIME",
+    "UNINFORMATIVE_EXTENSIONS",
+    "UNINFORMATIVE_MIMES",
+    "UNKNOWN",
     "BaseChecker",
     "BaseEnsembleStrategy",
     "BasePipelineStrategy",
@@ -48,8 +52,7 @@ __all__ = [
     "DetectorContainer",
     "FallbackChainStrategy",
     "FileType",
-    "UNINFORMATIVE_EXTENSIONS",
-    "UNINFORMATIVE_MIMES",
+    "FirstMatchEnsembleStrategy",
     "InputTarget",
     "MagicBytesChecker",
     "MagicDetectorSuite",
@@ -60,13 +63,10 @@ __all__ = [
     "MagikaChecker",
     "MagikaWrapper",
     "NormalizedResult",
-    "DEFAULT_BINARY_MIME",
     "OutputNormalizer",
     "ParallelRunner",
     "PipelineRunner",
     "PrimaryCategoryEnsembleStrategy",
-    "FirstMatchEnsembleStrategy",
     "SequentialAccumulatorStrategy",
-    "UNKNOWN",
     "create_default_container",
 ]

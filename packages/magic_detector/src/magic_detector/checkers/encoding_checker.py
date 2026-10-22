@@ -1,6 +1,7 @@
 """Encoding / Charset Checker using python-magic."""
 
 import time
+from typing import override
 
 from magic_detector.interfaces import BaseChecker
 from magic_detector.magic_wrapper import MagicWrapper
@@ -23,6 +24,7 @@ class MagicEncodingChecker(BaseChecker):
         self.wrapper = wrapper or MagicWrapper(mime_encoding=True)
         self.max_bytes = max_bytes
 
+    @override
     def check(self, target: InputTarget) -> DetectionResult:
         start_time = time.perf_counter()
         try:
@@ -34,7 +36,6 @@ class MagicEncodingChecker(BaseChecker):
                 encoding = "binary"
 
             elapsed_ms = (time.perf_counter() - start_time) * 1000.0
-            is_valid = encoding not in ("binary", "unknown")
 
             return DetectionResult(
                 encoding=encoding,
@@ -52,5 +53,6 @@ class MagicEncodingChecker(BaseChecker):
                 execution_time_ms=elapsed_ms,
             )
 
+    @override
     async def check_async(self, target: InputTarget) -> DetectionResult:
         return self.check(target)

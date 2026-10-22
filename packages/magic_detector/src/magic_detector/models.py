@@ -1,6 +1,6 @@
 """Data models for magic_detector package using Pydantic."""
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -8,8 +8,9 @@ from pydantic import BaseModel, Field
 from magic_detector._constants import DEFAULT_BINARY_MIME
 
 
-class CheckerCategory(str, Enum):
+class CheckerCategory(StrEnum):
     """Categorization of the underlying detection technique."""
+
     AI = "ai"
     HEURISTIC = "heuristic"
     METADATA = "metadata"

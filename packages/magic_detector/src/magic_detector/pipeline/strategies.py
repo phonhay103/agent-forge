@@ -2,6 +2,7 @@
 
 import mimetypes
 import time
+from typing import override
 
 from magic_detector._constants import UNINFORMATIVE_EXTENSIONS, UNINFORMATIVE_MIMES, UNKNOWN
 from magic_detector.interfaces import BaseChecker, BasePipelineStrategy
@@ -11,11 +12,11 @@ from magic_detector.models import DetectionResult, InputTarget
 class SequentialAccumulatorStrategy(BasePipelineStrategy):
     """Pipeline strategy: Executes checkers in sequence and merges missing/specific properties into a composite result."""
 
+    @override
     def execute(self, checkers: list[BaseChecker], target: InputTarget) -> DetectionResult:
         start_time = time.perf_counter()
         composite = DetectionResult(checker_name="pipeline_sequential")
         step_details = {}
-        
 
         for checker in checkers:
             if not checker.enabled:
@@ -31,7 +32,6 @@ class SequentialAccumulatorStrategy(BasePipelineStrategy):
 
                 if (is_comp_generic and not is_curr_generic) or (not composite.mime_type):
                     composite.mime_type = res.mime_type
-                    
 
             # Extension resolution: prefer extension matching composite.mime_type or non-generic
             if res.extension:
@@ -54,8 +54,6 @@ class SequentialAccumulatorStrategy(BasePipelineStrategy):
             if not composite.description and res.description:
                 composite.description = res.description
 
-            
-
         # Inferred extension from composite mime_type if missing or mismatched
         if composite.mime_type and (not composite.extension or composite.extension in UNINFORMATIVE_EXTENSIONS):
             inferred = mimetypes.guess_extension(composite.mime_type)
@@ -70,6 +68,7 @@ class SequentialAccumulatorStrategy(BasePipelineStrategy):
 class FallbackChainStrategy(BasePipelineStrategy):
     """Pipeline strategy: Tries primary checker; falls back to subsequent checkers if result is generic/failed."""
 
+    @override
     def execute(self, checkers: list[BaseChecker], target: InputTarget) -> DetectionResult:
         start_time = time.perf_counter()
         step_details = {}
@@ -91,7 +90,6 @@ class FallbackChainStrategy(BasePipelineStrategy):
             checker_name="pipeline_fallback_chain",
             mime_type=UNKNOWN,
             description=UNKNOWN,
-            
             details={"steps": step_details},
             execution_time_ms=elapsed_ms,
         )

@@ -23,14 +23,13 @@ def test_normalize_magika_result():
     assert norm_res.extension in ("py", "python")
     assert norm_res.category == "code"
     assert norm_res.is_text is True
-    
+
 
 def test_normalize_detection_result_method():
     raw_res = DetectionResult(
         mime_type="image/png",
         description="PNG image data, 100 x 100",
         extension="png",
-        
         checker_name="magic_mime",
     )
 
@@ -54,4 +53,3 @@ def test_suite_detect_normalized():
     assert norm_res.category == "code"
     assert norm_res.is_text is True
     assert norm_res.to_dict()["mime_type"] == "text/x-python"
-

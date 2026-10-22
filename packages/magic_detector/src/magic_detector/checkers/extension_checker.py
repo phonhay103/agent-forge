@@ -3,6 +3,7 @@
 import mimetypes
 import os
 import time
+from typing import override
 
 from magic_detector.checkers.mime_checker import MagicMimeChecker
 from magic_detector.interfaces import BaseChecker
@@ -23,6 +24,7 @@ class MagicExtensionChecker(BaseChecker):
         self.category = CheckerCategory.HEURISTIC
         self.mime_checker = mime_checker or MagicMimeChecker()
 
+    @override
     def check(self, target: InputTarget) -> DetectionResult:
         start_time = time.perf_counter()
         inferred_ext = None
@@ -44,13 +46,12 @@ class MagicExtensionChecker(BaseChecker):
                 inferred_ext = mime_ext.lstrip(".").lower()
 
         elapsed_ms = (time.perf_counter() - start_time) * 1000.0
-        
 
         return DetectionResult(
             extension=inferred_ext,
             mime_type=mime_type,
             checker_name=self.name,
-                checker_category=self.category,
+            checker_category=self.category,
             details={
                 "path_ref": file_ref,
                 "mime_type": mime_type,
@@ -59,5 +60,6 @@ class MagicExtensionChecker(BaseChecker):
             execution_time_ms=elapsed_ms,
         )
 
+    @override
     async def check_async(self, target: InputTarget) -> DetectionResult:
         return self.check(target)
